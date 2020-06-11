@@ -1,0 +1,20 @@
+<component name="ProjectDictionaryState">
+  <dictionary name="Administrator">
+    <words>
+      <w>accountcode</w>
+      <w>bgapi</w>
+      <w>callgroup</w>
+      <w>dialplan</w>
+      <w>dtmf</w>
+      <w>freeswitch</w>
+      <w>geteway</w>
+      <w>getuuid</w>
+      <w>killgw</w>
+      <w>prorestart</w>
+      <w>prostart</w>
+      <w>prostop</w>
+      <w>registergw</w>
+      <w>unregistergw</w>
+    </words>
+  </dictionary>
+</component>
