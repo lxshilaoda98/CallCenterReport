@@ -52,7 +52,7 @@ let findDataById = function( table,  id ) {
 
 
 //ivr未接= IVR放弃明细
-let findDataByPage_IVR = function( table, keys,phoneName,startTime_epoch,endTime_epoch,start, end ) {
+let findDataByPage_IVR = function(table, keys,phoneName,startTime_epoch,endTime_epoch,start, end ) {
 
     let _sql =  "SELECT ?? FROM ?? where caller_id_number=? and last_arg ='welcome.lua' and start_epoch between ? and ?  LIMIT ? , ?"
     if (phoneName == undefined ){
@@ -101,6 +101,35 @@ let OutCallDetailed= function(startTime_epoch,endTime_epoch,start, end ) {
     return query( _sql, [startTime_epoch,endTime_epoch,start, end ] )
 }
 
+let AutomaticOutCallStatis = function(startTime_epoch,endTime_epoch,start, end ) {
+
+    let _sql = "select t1.name as 任务批次,t1.CallStopNumber AS 总录入的次数,count(t2.CallNumber) as 已经呼叫的次数," +
+        "SUM(CASE WHEN t3.AutoHangu ='MANAGER_REQUEST'  THEN 1 else 0 END) as 主动挂断," +
+        "SUM(CASE WHEN t3.AutoHangu in('NO_USER_RESPONSE','NORMAL_UNSPECIFIED')  THEN 1 else 0 END) as 未接通挂断," +
+        "SUM(CASE WHEN t3.AutoHangu ='SUCCESS'  THEN 1 else 0 END) as 接通挂断," +
+        "SUM(CASE WHEN t3.AutoHangu ='NO_ANSWER'  THEN 1 else 0 END) as 未应答 " +
+        "from auto_task as t2 " +
+        "LEFT JOIN auto_importaction as t1 ON t1.Oid = t2.Importaction " +
+        "left JOIN auto_calllog as t3 on t3.Task = t2.Oid " +
+        "where t1.name is not NULL and t1.CreateTime BETWEEN ? and ? group BY t1.Name LIMIT ?,?"
+
+    return query( _sql, [startTime_epoch,endTime_epoch,start, end ] )
+}
+
+let GatewayUse = function(start, end ) {
+
+
+    let _sql = "select *  from (select t1.`memo` as 名称,t1.`concurrent` as 总共数量," +
+        "t1.`concurrent`- case when tt.`运行中的数量` is null then 0 else tt.`运行中的数量` end AS 剩余数量," +
+        "case when tt.`运行中的数量` is null then 0 else tt.`运行中的数量` end as 运行中的数量 from gateway t1 " +
+        "LEFT JOIN (select gateWay as wayID,count(*) 运行中的数量 from auto_importaction t1 where `Status` = '进行中' " +
+        "GROUP BY GateWay) tt  on t1.oid = tt.wayID  ) ttt  LIMIT ?,?";
+
+    return query( _sql, [start, end] )
+}
+
+
+
 
 
 
@@ -145,6 +174,8 @@ let count = function( table ) {
 }
 
 module.exports = {
+    GatewayUse,
+    AutomaticOutCallStatis,
     OutCallDetailed,
     InboundDetailed,
     findDataByPage_IVR,

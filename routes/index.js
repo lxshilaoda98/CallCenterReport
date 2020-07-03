@@ -10,6 +10,9 @@ router
     .get('/detailed/InboundDetailed', Detailed.InboundDetailed)
     .get('/detailed/OutCallDetailed', Detailed.OutCallDetailed)
 
+    .get('/autoTask/AutomaticOutCall', Detailed.AutomaticOutCallStatis)
+    .get('/autoTask/GatewayUse', Detailed.GatewayUse)
+
 module.exports = router;
 
 

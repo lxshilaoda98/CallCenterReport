@@ -36,6 +36,12 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                 case 'OutCallDetailed':
                     resolve(db.OutCallDetailed(startTime_epoch, endTime_epoch, start, end));
                     break;
+                case 'AutomaticOutCallStatis':
+                    resolve(db.AutomaticOutCallStatis(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'GatewayUse':
+                    resolve(db.GatewayUse(start, end));
+                    break;
                 default :
                     resolve('未知参数');
             }
@@ -198,6 +204,82 @@ class ReportController {
 
 
             let cs = await selectTable('OutCallDetailed','','',startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 自动外呼统计报表
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AutomaticOutCallStatis(ctx){
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch =  timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AutomaticOutCallStatis','','',startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 外线使用报表
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async GatewayUse(ctx){
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('GatewayUse',start, end);
             body = {
                 'code': 0,
                 'message': '成功',
