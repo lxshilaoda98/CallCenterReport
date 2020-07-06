@@ -278,8 +278,9 @@ class ReportController {
             let start = (page - 1) * 5; //当前页
             let end = pagesize * 1; //每页显示
 
+            console.log('page.>'+page+'..>pagesize.>'+pagesize)
 
-            let cs = await selectTable('GatewayUse',start, end);
+            let cs = await selectTable('GatewayUse','','','','',start, end);
             body = {
                 'code': 0,
                 'message': '成功',

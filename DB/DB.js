@@ -107,7 +107,8 @@ let AutomaticOutCallStatis = function(startTime_epoch,endTime_epoch,start, end )
         "SUM(CASE WHEN t3.AutoHangu ='MANAGER_REQUEST'  THEN 1 else 0 END) as 主动挂断," +
         "SUM(CASE WHEN t3.AutoHangu in('NO_USER_RESPONSE','NORMAL_UNSPECIFIED')  THEN 1 else 0 END) as 未接通挂断," +
         "SUM(CASE WHEN t3.AutoHangu ='SUCCESS'  THEN 1 else 0 END) as 接通挂断," +
-        "SUM(CASE WHEN t3.AutoHangu ='NO_ANSWER'  THEN 1 else 0 END) as 未应答 " +
+        "SUM(CASE WHEN t3.AutoHangu ='NO_ANSWER'  THEN 1 else 0 END) as 未应答, " +
+        "SUM(CASE WHEN t3.AutoHangu in('SUBSCRIBER_ABSENT','NORMAL_TEMPORARY_FAILURE')  THEN 1 else 0 END) as 未知 "+
         "from auto_task as t2 " +
         "LEFT JOIN auto_importaction as t1 ON t1.Oid = t2.Importaction " +
         "left JOIN auto_calllog as t3 on t3.Task = t2.Oid " +
@@ -117,8 +118,6 @@ let AutomaticOutCallStatis = function(startTime_epoch,endTime_epoch,start, end )
 }
 
 let GatewayUse = function(start, end ) {
-
-
     let _sql = "select *  from (select t1.`memo` as 名称,t1.`concurrent` as 总共数量," +
         "t1.`concurrent`- case when tt.`运行中的数量` is null then 0 else tt.`运行中的数量` end AS 剩余数量," +
         "case when tt.`运行中的数量` is null then 0 else tt.`运行中的数量` end as 运行中的数量 from gateway t1 " +

@@ -24,5 +24,6 @@ app.use(bodyParser());
 app.use(apiRouter.routes());
 
 app.listen(3322);
+console.log('开启成功!')
 
 
