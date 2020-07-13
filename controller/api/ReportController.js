@@ -1,4 +1,5 @@
 var db = require("../../DB/DB"); //引入数据库封装模块
+var log = require("../log4j/logger_Api");
 
 //时间戳转换成日期
 function timestampToTime(timestamp) {
@@ -23,6 +24,8 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
 
     return new Promise((resolve, reject) => {
         try {
+            log.info("[CCReport].>调用了..>"+table+`..>参数.>keys=${keys}phoneName=${phoneName}
+            startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table){
                 case 'cdr_table_a_leg' :
                     resolve(db.findDataByPage_IVR(table, keys, phoneName, startTime_epoch, endTime_epoch, start, end));
@@ -41,6 +44,9 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                     break;
                 case 'GatewayUse':
                     resolve(db.GatewayUse(start, end));
+                    break;
+                case 'WaitingTask':
+                    resolve(db.WaitingTask(start, end));
                     break;
                 default :
                     resolve('未知参数');
@@ -281,6 +287,43 @@ class ReportController {
             console.log('page.>'+page+'..>pagesize.>'+pagesize)
 
             let cs = await selectTable('GatewayUse','','','','',start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 正在执行的外呼数据任务
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async WaitingTask(ctx){
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+            console.log('page.>'+page+'..>pagesize.>'+pagesize)
+
+            let cs = await selectTable('WaitingTask','','','','',start, end);
             body = {
                 'code': 0,
                 'message': '成功',

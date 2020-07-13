@@ -1,22 +1,16 @@
 const mysql = require("mysql")
 
-let config={
-    database: {
-        DATABASE: 'freeswitch',
-        USERNAME: 'root',
-        PASSWORD: 'root',
-        PORT: '3307',
-        HOST: '127.0.0.1'
-    },
-}
+
+const config = require('../config/config.js').getConfig('database');
+
 
 
 var pool = mysql.createPool({
-    host        : config.database.HOST,
-    port        : config.database.PORT,
-    user        : config.database.USERNAME,
-    password    : config.database.PASSWORD,
-    database    : config.database.DATABASE
+    host        : config.HOST,
+    port        : config.PORT,
+    user        : config.USERNAME,
+    password    : config.PASSWORD,
+    database    : config.DATABASE
 });
 
 let query = function( sql, values ) {
@@ -108,7 +102,8 @@ let AutomaticOutCallStatis = function(startTime_epoch,endTime_epoch,start, end )
         "SUM(CASE WHEN t3.AutoHangu in('NO_USER_RESPONSE','NORMAL_UNSPECIFIED')  THEN 1 else 0 END) as 未接通挂断," +
         "SUM(CASE WHEN t3.AutoHangu ='SUCCESS'  THEN 1 else 0 END) as 接通挂断," +
         "SUM(CASE WHEN t3.AutoHangu ='NO_ANSWER'  THEN 1 else 0 END) as 未应答, " +
-        "SUM(CASE WHEN t3.AutoHangu in('SUBSCRIBER_ABSENT','NORMAL_TEMPORARY_FAILURE')  THEN 1 else 0 END) as 未知 "+
+        "SUM(CASE WHEN t3.AutoHangu ='USER_BUSY' THEN 1 else 0 END) as 用户忙, " +
+        "SUM(CASE WHEN t3.AutoHangu in('SUBSCRIBER_ABSENT','NORMAL_TEMPORARY_FAILURE','DESTINATION_OUT_OF_ORDER')  THEN 1 else 0 END) as 异常未知 "+
         "from auto_task as t2 " +
         "LEFT JOIN auto_importaction as t1 ON t1.Oid = t2.Importaction " +
         "left JOIN auto_calllog as t3 on t3.Task = t2.Oid " +
@@ -126,6 +121,21 @@ let GatewayUse = function(start, end ) {
 
     return query( _sql, [start, end] )
 }
+
+
+
+let WaitingTask = function(start, end ) {
+    let _sql = "select t1.Oid as 批次ID,t2.Oid as 任务ID,t2.ExtraPhone1 as 号码,t3.memo as 网关名称,t1.CallStopNumber as 总呼叫次数," +
+        "t2.CallNumber as 已经呼叫次数," +
+        "case when t1.isAutoCall = true THEN '开启' else '未开启' END as 是否开启," +
+        "t2.AutoHangu AS 挂机状态,t2.CusName as 部门 " +
+        "from auto_importaction t1 " +
+        "LEFT JOIN auto_task t2 on t1.Oid=t2.Importaction " +
+        "left join gateway t3 on t1.GateWay = t3.Oid " +
+        "where t1.`Status` ='进行中' and t2.`Status` ='正常' LIMIT ?,?";
+    return query( _sql, [start, end] )
+}
+
 
 
 
@@ -173,6 +183,7 @@ let count = function( table ) {
 }
 
 module.exports = {
+    WaitingTask,
     GatewayUse,
     AutomaticOutCallStatis,
     OutCallDetailed,

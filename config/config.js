@@ -12,6 +12,13 @@ const configParams = {
         WebSocketLocalhost:'localhost',
         WebSocketPort : '5555'//
     },
+    database: {
+        DATABASE: 'freeswitch',
+        USERNAME: 'root',
+        PASSWORD: 'root',
+        PORT: '3307',
+        HOST: '127.0.0.1'
+    }
 };
 const getConfig = module=>(configParams[module]!==undefined)?configParams[module]:{};
 exports.getConfig = getConfig;

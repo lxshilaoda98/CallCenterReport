@@ -12,6 +12,8 @@ router
 
     .get('/autoTask/AutomaticOutCall', Detailed.AutomaticOutCallStatis)
     .get('/autoTask/GatewayUse', Detailed.GatewayUse)
+    .get('/autoTask/WaitingTask', Detailed.WaitingTask)
+
 
 module.exports = router;
 
