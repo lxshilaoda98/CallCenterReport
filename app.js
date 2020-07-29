@@ -6,7 +6,7 @@ const router = require('koa-router')();
 const bodyParser = require('koa-bodyparser');
 const apiRouter = require('./routes');
 
-
+var http=require('http');
 
 const app = new koa();
 
@@ -24,8 +24,12 @@ app.use(index);
 app.use(bodyParser());
 app.use(apiRouter.routes());
 
-app.listen(3322);
-console.log('开启成功!')
+
+
+app.listen(3322,function () {
+    console.log("[报表系统]Start.. 应用实例[CallCenterReport]. 监听端口：", 3322)
+});
+
 
 
 

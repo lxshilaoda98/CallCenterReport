@@ -5,12 +5,12 @@ var log = require("../log4j/logger_Api");
 function timestampToTime(timestamp) {
     var date = new Date(timestamp * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
     var Y = date.getFullYear() + '-';
-    var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
     var D = date.getDate() + ' ';
     var h = date.getHours() + ':';
     var m = date.getMinutes() + ':';
     var s = date.getSeconds();
-    return Y+M+D+h+m+s;
+    return Y + M + D + h + m + s;
 }
 /**
  *
@@ -24,9 +24,9 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
 
     return new Promise((resolve, reject) => {
         try {
-            log.info("[CCReport].>调用了..>"+table+`..>参数.>keys=${keys}phoneName=${phoneName}
+            log.info("[CCReport].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
-            switch (table){
+            switch (table) {
                 case 'cdr_table_a_leg' :
                     resolve(db.findDataByPage_IVR(table, keys, phoneName, startTime_epoch, endTime_epoch, start, end));
                     break;
@@ -48,6 +48,26 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                 case 'WaitingTask':
                     resolve(db.WaitingTask(start, end));
                     break;
+                case 'AcdQueueDetailed':
+                    resolve(db.AcdQueueDetailed(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'CallHanguDetailed':
+                    resolve(db.CallHanguDetailed(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'agent_login':
+                    resolve(db.agent_login(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'agent_acw':
+                    resolve(db.agent_acw(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'agent_aux':
+                    resolve(db.agent_aux(startTime_epoch, endTime_epoch, start, end));
+                    break;
+                case 'agent_hold':
+                    resolve(db.agent_hold(startTime_epoch, endTime_epoch, start, end));
+                    break;
+
+
                 default :
                     resolve('未知参数');
             }
@@ -119,7 +139,7 @@ class ReportController {
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
 
-            startTime_epoch =  timestampToTime(startTime_epoch)
+            startTime_epoch = timestampToTime(startTime_epoch)
             endTime_epoch = timestampToTime(endTime_epoch)
 
 
@@ -127,7 +147,7 @@ class ReportController {
             let end = pagesize * 1; //每页显示
 
 
-            let cs = await selectTable('AgentLoginDetailed','','',startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('AgentLoginDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -160,7 +180,7 @@ class ReportController {
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
 
-            startTime_epoch =  timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = timestampToTime(endTime_epoch)
 
 
@@ -168,7 +188,7 @@ class ReportController {
             let end = pagesize * 1; //每页显示
 
 
-            let cs = await selectTable('InboundDetailed','','',startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('InboundDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -201,7 +221,7 @@ class ReportController {
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
 
-            startTime_epoch =  timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = timestampToTime(endTime_epoch)
 
 
@@ -209,7 +229,7 @@ class ReportController {
             let end = pagesize * 1; //每页显示
 
 
-            let cs = await selectTable('OutCallDetailed','','',startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('OutCallDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -233,7 +253,7 @@ class ReportController {
      * @returns {Promise.<void>}
      * @constructor
      */
-    async AutomaticOutCallStatis(ctx){
+    async AutomaticOutCallStatis(ctx) {
         let body;
         try {
             let page = ctx.request.query.page;
@@ -241,7 +261,7 @@ class ReportController {
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
 
-            startTime_epoch =  timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = timestampToTime(endTime_epoch)
 
 
@@ -249,7 +269,7 @@ class ReportController {
             let end = pagesize * 1; //每页显示
 
 
-            let cs = await selectTable('AutomaticOutCallStatis','','',startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('AutomaticOutCallStatis', '', '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -273,20 +293,19 @@ class ReportController {
      * @returns {Promise.<void>}
      * @constructor
      */
-    async GatewayUse(ctx){
+    async GatewayUse(ctx) {
         let body;
         try {
             let page = ctx.request.query.page;
             let pagesize = ctx.request.query.pagesize;
 
 
-
             let start = (page - 1) * 5; //当前页
             let end = pagesize * 1; //每页显示
 
-            console.log('page.>'+page+'..>pagesize.>'+pagesize)
+            console.log('page.>' + page + '..>pagesize.>' + pagesize)
 
-            let cs = await selectTable('GatewayUse','','','','',start, end);
+            let cs = await selectTable('GatewayUse', '', '', '', '', start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -310,20 +329,19 @@ class ReportController {
      * @returns {Promise.<void>}
      * @constructor
      */
-    async WaitingTask(ctx){
+    async WaitingTask(ctx) {
         let body;
         try {
             let page = ctx.request.query.page;
             let pagesize = ctx.request.query.pagesize;
 
 
-
             let start = (page - 1) * 5; //当前页
             let end = pagesize * 1; //每页显示
 
-            console.log('page.>'+page+'..>pagesize.>'+pagesize)
+            console.log('page.>' + page + '..>pagesize.>' + pagesize)
 
-            let cs = await selectTable('WaitingTask','','','','',start, end);
+            let cs = await selectTable('WaitingTask', '', '', '', '', start, end);
             body = {
                 'code': 0,
                 'message': '成功',
@@ -340,6 +358,246 @@ class ReportController {
         }
         ctx.body = body;
     }
+
+
+    /**
+     * 呼叫排队明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AcdQueueDetailed(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AcdQueueDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 呼叫放弃明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async CallHanguDetailed(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('CallHanguDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+
+    /**
+     * 坐席登陆明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     */
+    async agent_login(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('agent_login', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席小休明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     */
+    async agent_acw(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('agent_acw', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席话后明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     */
+    async agent_aux(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('agent_aux', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+
+    /**
+     * 坐席保持明细
+     * @param ctx
+     * @returns {Promise.<void>}
+     */
+    async agent_hold(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('agent_hold', '', '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
 
 }
 

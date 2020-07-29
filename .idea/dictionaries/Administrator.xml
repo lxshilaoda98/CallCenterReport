@@ -13,6 +13,7 @@
       <w>prorestart</w>
       <w>prostart</w>
       <w>prostop</w>
+      <w>recv</w>
       <w>registergw</w>
       <w>unregistergw</w>
     </words>
