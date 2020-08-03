@@ -20,6 +20,30 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                 case 'CallCountStatis' :
                     resolve(db.CallCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
+                case 'AgentCountStatis' :
+                    resolve(db.AgentCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'OrgCountStatis' :
+                    resolve(db.OrgCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'OutCallStatis' :
+                    resolve(db.OutCallStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentACWStatis' :
+                    resolve(db.AgentACWStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentServiceStatis' :
+                    resolve(db.AgentServiceStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentLoginStatis' :
+                    resolve(db.AgentLoginStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentlevelStatis' :
+                    resolve(db.AgentlevelStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentlevelPropStatis' :
+                    resolve(db.AgentlevelPropStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
 
 
 
@@ -143,6 +167,344 @@ class StatisticsReport {
 
 
             let cs = await selectTable('CallCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席综合统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentCountStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 技能组综合统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async OrgCountStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('OrgCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 呼出电话统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async OutCallStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('OutCallStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+
+    /**
+     * 坐席休息时间统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentACWStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentACWStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席服务水平统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentServiceStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentServiceStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席登录统计
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentLoginStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentLoginStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+
+    /**
+     * 客户对客服满意度评价
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentlevelStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentlevelStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 客户对客服满意度评价比例
+     * @param ctx
+     * @returns {Promise.<void>}
+     * @constructor
+     */
+    async AgentlevelPropStatis(ctx) {
+        let body;
+        try {
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+
+            let SelectType = ctx.request.query.type;
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * 5; //当前页
+            let end = pagesize * 1; //每页显示
+
+
+            let cs = await selectTable('AgentlevelPropStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
                 'code': 0,
                 'message': '成功',

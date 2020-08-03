@@ -22,6 +22,18 @@ router
     .get('/Statistic/Ivr_Statis', Statistic.Ivr_Statis)
     .get('/Statistic/Agent_CallStatis', Statistic.Agent_CallStatis)
     .get('/Statistic/CallCountStatis', Statistic.CallCountStatis)
+    .get('/Statistic/AgentCountStatis', Statistic.AgentCountStatis)
+    .get('/Statistic/OrgCountStatis', Statistic.OrgCountStatis)
+    .get('/Statistic/OutCallStatis', Statistic.OutCallStatis)
+    .get('/Statistic/AgentACWStatis', Statistic.AgentACWStatis)
+    .get('/Statistic/AgentServiceStatis', Statistic.AgentServiceStatis)
+    .get('/Statistic/AgentLoginStatis', Statistic.AgentLoginStatis)
+    .get('/Statistic/AgentlevelStatis', Statistic.AgentlevelStatis)
+    .get('/Statistic/AgentlevelPropStatis', Statistic.AgentlevelPropStatis)
+
+
+
+
 
 
     .get('/autoTask/AutomaticOutCall', Detailed.AutomaticOutCallStatis)

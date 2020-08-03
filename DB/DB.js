@@ -379,6 +379,7 @@ let CallCountStatis = async function (startTime_epoch, endTime_epoch, start, end
 
         let forCount = arr.length;
 
+
         for (var i = 0; i < forCount; i++) {
             let newarr;
             //通过日期找关联的 <外呼数据>
@@ -418,6 +419,464 @@ let CallCountStatis = async function (startTime_epoch, endTime_epoch, start, end
 }
 
 /**
+ * 坐席综合统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "SELECT AgentId as 坐席工号,:convert as time,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 登录总时长 " +
+            `from agent_login where CreateStartTime BETWEEN ? and ? group by AgentId,:convert LIMIT ?,?`;
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+            let newarr;
+
+            //通过坐席工号，来计算 空闲时长
+            _sql = "SELECT AgentId as 坐席工号,:convert,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 空闲时长 " +
+                `from agent_ide where CreateStartTime BETWEEN ? and ?  
+                and agentid = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}'
+                 group by AgentId,:convert `;
+            var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+
+
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].空闲时长 = newarr["0"]["空闲时长"] == null ? 0 : newarr["0"]["空闲时长"];
+            }
+
+            //通过坐席工号，来计算 后处理时长
+            _sql = "SELECT AgentId as 坐席工号,:convert,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 后处理时长 " +
+                `from agent_aux where CreateStartTime BETWEEN ? and ?  
+                and agentid = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}'
+                 group by AgentId,:convert `;
+            var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].后处理时长 = newarr["0"]["后处理时长"] == null ? 0 : newarr["0"]["后处理时长"];
+
+            }
+
+            //通过坐席工号，来计算 小休时长
+            _sql = "SELECT AgentId as 坐席工号,:convert,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 小休时长 " +
+                `from agent_acw where CreateStartTime BETWEEN ? and ? 
+                 and agentid = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}' 
+                 group by AgentId,:convert `;
+            var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].小休时长 = newarr["0"]["小休时长"] == null ? 0 : newarr["0"]["小休时长"];
+            }
+
+            //通过坐席工号，来计算 保持相关数据
+            _sql = "SELECT AgentId as 坐席工号,:convert,count(*) as 保持次数,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 保持时长, " +
+                "round(sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) / count(*) ,0) as 平均保持时长 " +
+                "from agent_hold " +
+                `where CreateStartTime BETWEEN ? and ? and agentid = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}'` +
+                " group by AgentId,:convert";
+            var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].保持次数 = newarr["0"]["保持次数"] == null ? 0 : newarr["0"]["保持次数"];
+                arr[i].保持时长 = newarr["0"]["保持时长"] == null ? 0 : newarr["0"]["保持时长"];
+                arr[i].平均保持时长 = newarr["0"]["平均保持时长"] == null ? 0 : newarr["0"]["平均保持时长"];
+            }
+
+            //通过坐席工号，来计算 呼入相关数据
+            _sql = "select CCAgent 坐席工号,:convert,count(*) as 呼入量,sum(QueueStartTime is not null) as 进入排队量," +
+                "sum(QueueStartTime is null) as 未转坐席放弃量,sum(CCAgentAnsweredTime is not NULL) as 坐席应答量," +
+                "sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as 转坐席未答量," +
+                "sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) AS 3秒放弃数," +
+                "concat(round((sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) / sum(QueueStartTime is not null))*100,2),'%') AS 3秒放弃率," +
+                "concat(round((sum(CCAgentAnsweredTime is not NULL) / sum(QueueStartTime is not null))*100,2),'%') AS 排队接通率," +
+                "sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) as 呼入通话时长," +
+                "round(sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均呼入通话时长 " +
+                "from callstart " +
+                `where IvrStartTime BETWEEN ? and ? and CCAgent = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}' ` +
+                "GROUP BY CCAgent,:convert";
+
+            var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].呼入量 = newarr["0"]["呼入量"] == null ? 0 : newarr["0"]["呼入量"];
+                arr[i].进入排队量 = newarr["0"]["进入排队量"] == null ? 0 : newarr["0"]["进入排队量"];
+                arr[i].未转坐席放弃量 = newarr["0"]["未转坐席放弃量"] == null ? 0 : newarr["0"]["未转坐席放弃量"];
+                arr[i].坐席应答量 = newarr["0"]["坐席应答量"] == null ? 0 : newarr["0"]["坐席应答量"];
+                arr[i].转坐席未答量 = newarr["0"]["转坐席未答量"] == null ? 0 : newarr["0"]["转坐席未答量"];
+                arr[i].三秒放弃数 = newarr["0"]["3秒放弃数"] == null ? 0 : newarr["0"]["3秒放弃数"];
+                arr[i].三秒放弃率 = newarr["0"]["3秒放弃率"] == null ? 0 : newarr["0"]["3秒放弃率"];
+                arr[i].排队接通率 = newarr["0"]["排队接通率"] == null ? 0 : newarr["0"]["排队接通率"];
+                arr[i].呼入通话时长 = newarr["0"]["呼入通话时长"] == null ? 0 : newarr["0"]["呼入通话时长"];
+                arr[i].平均呼入通话时长 = newarr["0"]["平均呼入通话时长"] == null ? 0 : newarr["0"]["平均呼入通话时长"];
+            }
+
+            //通过坐席工号，来计算 呼出相关数据
+            _sql = "select accountcode AS 坐席工号,:convert, sum(1) as 外呼总量," +
+                "sum(case WHEN Billsec >0  THEN 1 else 0 end ) AS 外呼成功量," +
+                "sum(case WHEN Billsec =0 THEN 1 else 0 end ) AS 外呼失败量," +
+                "sum(case WHEN sip_hangup_disposition ='send_bye' THEN 1 else 0 end ) AS 客户挂机," +
+                "sum(case WHEN sip_hangup_disposition ='recv_bye' THEN 1 else 0 end ) AS 坐席挂机," +
+                "sum(Billsec) AS 呼出通话时长,round( (sum(Billsec) / sum(case WHEN Billsec >0 THEN 1 else 0 end) )) as 平均呼出通话时长 " +
+                "from cdr_table_a_leg " +
+                `where start_stamp BETWEEN ? and ?  and accountcode = '${arr[i]["坐席工号"]}' and :convert = '${arr[i]["日期"]}'` +
+                " and last_app='bridge' GROUP BY accountcode,:convert";
+
+            var groupByStr = await convertStr(SelectType, 'start_stamp');
+
+            _sql = _sql.replace(/:convert/g, groupByStr);
+
+            newarr = await query(_sql, [startTime_epoch, endTime_epoch]);
+
+            if (newarr.length > 0) {
+                arr[i].外呼总量 = newarr["0"]["外呼总量"] == null ? 0 : newarr["0"]["外呼总量"];
+                arr[i].外呼成功量 = newarr["0"]["外呼成功量"] == null ? 0 : newarr["0"]["外呼成功量"];
+                arr[i].外呼失败量 = newarr["0"]["外呼失败量"] == null ? 0 : newarr["0"]["外呼失败量"];
+                arr[i].呼出通话时长 = newarr["0"]["呼出通话时长"] == null ? 0 : newarr["0"]["呼出通话时长"];
+                arr[i].平均呼出通话时长 = newarr["0"]["平均呼出通话时长"] == null ? 0 : newarr["0"]["平均呼出通话时长"];
+            }
+
+            let outNumber = arr[i]["外呼总量"] == undefined ? 0 : arr[i]["外呼总量"];
+            let inNumber = arr[i]["呼入量"] == undefined ? 0 : arr[i]["呼入量"];
+            let zPhone = (outNumber + inNumber);
+
+            arr[i].平均后处理时长 = arr[i]["后处理时长"] == null ? 0 :
+                Math.round(arr[i]["后处理时长"] / zPhone);
+
+            arr[i].后处理率 = arr[i]["后处理时长"] == null ? 0 :
+                Math.round((arr[i]["后处理时长"] / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].呼出占比 = arr[i]["呼出通话时长"] == null ? 0 :
+                Math.round((arr[i]["呼出通话时长"] / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].呼入占比 = arr[i]["呼入通话时长"] == null ? 0 :
+                Math.round((arr[i]["呼入通话时长"] / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].空闲率 = arr[i]["空闲时长"] == null ? 0 :
+                Math.round((arr[i]["空闲时长"] / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].小休率 = arr[i]["小休时长"] == null ? 0 :
+                Math.round((arr[i]["小休时长"] / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].非工作率 = Math.round(((arr[i]["小休时长"]+arr[i]["后处理时长"]) / arr[i]["登录总时长"])*100) + '%';
+
+            arr[i].工作率 = Math.round(((arr[i]["呼入通话时长"]+arr[i]["呼出通话时长"]+arr[i]["后处理时长"]) / arr[i]["登录总时长"])*100) + '%';
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+
+/**
+ * 技能组综合统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select Org as 技能组,:convert as time,count(*) as 呼入电话数," +
+            "sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) as 等待时长, " +
+            "round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) / sum(QueueStartTime is not null),0) as 平均等待时长," +
+            "sum(QueueStartTime is null) as 未转坐席放弃量,sum(CCAgentAnsweredTime is not NULL) as 通话数量," +
+            "round(sum(TIMESTAMPDIFF(SECOND,CCAgentAnsweredTime,CallEndTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均通话时长," +
+            "round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均应答速度," +
+            "sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as 放弃电话数量," +
+            "CONcat(round(sum(CCAgentAnsweredTime is NULL and CCAgent is not null) /count(*) * 100 ,0),'%') as 放弃率," +
+            "round(sum(TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is NULL and CCAgent is not null),0) as 平均放弃时长," +
+            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) < 20 then 1 else 0 END) as 等待小于20秒的个数," +
+            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 20 and 40 then 1 else 0 END) as 等待20到40秒的个数, " +
+            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 40 and 60 then 1 else 0 END) as 等待40到60秒的个数," +
+            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) > 60 then 1 else 0 END) as 等待大于60秒的个数 " +
+            "from callstart " +
+            "where Org is not null and QueueStartTime is not null " +
+            "and IvrStartTime BETWEEN ? and ? " +
+            "GROUP BY Org,:convert LIMIT ?,?";
+
+        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 呼出电话统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let OutCallStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select accountcode,sum(1) as 外呼总量, :convert as time," +
+            "sum(case WHEN Billsec >0 THEN 1 else 0 end ) AS 外呼成功量," +
+            "sum(case WHEN Billsec =0 THEN 1 else 0 end ) AS 外呼失败量," +
+            "sum(Billsec) as 总通话时长," +
+            "round(sum(Billsec) / sum(case WHEN Billsec >0 THEN 1 else 0 end ),0) as 平均通话时长," +
+            "sum(TIMESTAMPDIFF(SECOND,start_stamp,answer_stamp)) as 总振铃时长," +
+            "round(sum(TIMESTAMPDIFF(SECOND,start_stamp,answer_stamp)) / sum(case WHEN Billsec >0 THEN 1 else 0 end ),0) AS 平均振铃时长 " +
+            "from cdr_table_a_leg  " +
+            "where last_app='bridge' and start_stamp BETWEEN ? and ? " +
+            "GROUP BY accountcode,:convert LIMIT ?,?";
+
+        var groupByStr = await convertStr(SelectType, 'start_stamp');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 坐席休息时间统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentACWStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "SELECT AgentId as 坐席,:convert as time," +
+            "sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 时长,count(1) as 次数," +
+            "round(sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) / count(1),0) AS 平均时长 from agent_acw " +
+            "where CreateStartTime BETWEEN ? and ? " +
+            "GROUP BY AgentId ,:convert LIMIT ?,?";
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 坐席服务水平统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentServiceStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select :convert as time,CCAgent," +
+            "sum(QueueStartTime is not null) as 呼叫振铃数," +
+            "sum(CCAgentAnsweredTime is not NULL) as 通话数," +
+            "sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 15 THEN 1 else 0 END ) as 15秒内摘机电话数," +
+            "CONcat(round( sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 15 THEN 1 else 0 END ) / sum(CCAgentAnsweredTime is not NULL) *100,0),'%') as 15秒服务水平," +
+            "sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 20 THEN 1 else 0 END ) as 20秒内摘机电话数," +
+            "CONcat(round( sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 20 THEN 1 else 0 END ) / sum(CCAgentAnsweredTime is not NULL) *100,0),'%') as 20秒服务水平," +
+            "sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 25 THEN 1 else 0 END ) as 25秒内摘机电话数," +
+            "CONcat(round( sum(case when TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime) < 25 THEN 1 else 0 END ) / sum(CCAgentAnsweredTime is not NULL) *100,0),'%') as 25秒服务水平," +
+            "sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) as 通话时长," +
+            "round(sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均通话时长 " +
+            "from callstart " +
+            "where CCAgent is not null AND IvrStartTime BETWEEN ? and ? " +
+            "GROUP BY :convert,CCAgent LIMIT ?,?";
+
+        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 坐席登录统计
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentLoginStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "SELECT AgentId as 坐席,:convert as time," +
+            "sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 时长,count(1) as 次数," +
+            "round(sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) / count(1),0) AS 登录时长 from agent_login " +
+            "where CreateStartTime BETWEEN ? and ? " +
+            "GROUP BY AgentId ,:convert LIMIT ?,?";
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 坐席满意度评价
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentlevelStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select AgentId as 坐席,ani as 电话号码,PjCreateTime as time,nLevelName as 评定等级,CallDirection as 呼叫方向 from agentservicelevel " +
+            "where PjCreateTime BETWEEN ? and ? LIMIT ?,?";
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let forCount = arr.length;
+
+        for (var i = 0; i < forCount; i++) {
+            //由于时间格式问题，所以新增一个字段
+            arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD HH:mm:ss');
+        }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+/**
+ * 坐席满意度评价比例
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @returns {Promise.<*>}
+ * @constructor
+ */
+let AgentlevelPropStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select AgentId as 坐席," +
+            "sum( CASE WHEN nLevel ='1' THEN 1 ELSE 0 END) AS 非常满意数," +
+            "sum( CASE WHEN nLevel ='2' THEN 1 ELSE 0 END) AS 满意数," +
+            "sum( CASE WHEN nLevel ='3' THEN 1 ELSE 0 END) AS 不满意数," +
+            "sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) AS 参评数," +
+            "concat(ROUND(sum( CASE WHEN nLevel ='1' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%') AS 非常满意度比例," +
+            "concat(ROUND(sum( CASE WHEN nLevel ='2' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 满意度比例," +
+            "concat(ROUND(sum( CASE WHEN nLevel ='3' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 不满意度比例," +
+            "concat(ROUND(sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 参评比例 " +
+            " from agentservicelevel  where PjCreateTime BETWEEN ? and ? group BY AgentId LIMIT ?,? ";
+
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+
+
+/**
  * 针对查询类型 分组
  * @param SelectType
  * @returns {string}
@@ -444,7 +903,8 @@ function convertStr(SelectType, name) {
 
 
 module.exports = {
-    Ivr_Statis, Agent_CallStatis, CallCountStatis,
+    Ivr_Statis, Agent_CallStatis, CallCountStatis, AgentCountStatis,OrgCountStatis,OutCallStatis,AgentACWStatis,AgentServiceStatis,AgentLoginStatis,
+    AgentlevelStatis,AgentlevelPropStatis,
 
 
     agent_login, agent_aux, agent_acw, agent_hold,

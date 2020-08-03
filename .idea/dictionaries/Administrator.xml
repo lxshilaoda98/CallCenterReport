@@ -2,7 +2,9 @@
   <dictionary name="Administrator">
     <words>
       <w>accountcode</w>
+      <w>agentlevel</w>
       <w>bgapi</w>
+      <w>billsec</w>
       <w>callgroup</w>
       <w>dialplan</w>
       <w>dtmf</w>
@@ -15,6 +17,7 @@
       <w>prostop</w>
       <w>recv</w>
       <w>registergw</w>
+      <w>statis</w>
       <w>unregistergw</w>
     </words>
   </dictionary>

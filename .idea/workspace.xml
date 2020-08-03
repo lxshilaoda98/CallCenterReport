@@ -2,13 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b3a9443d-69ce-45a0-bccb-1092e1f29cad" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/controller/ModHelper.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/controller/api/StatisticsReport.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/dictionaries/Administrator.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/Administrator.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DB/DB.js" afterPath="$PROJECT_DIR$/DB/DB.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/controller/api/ReportController.js" afterPath="$PROJECT_DIR$/controller/api/ReportController.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/controller/api/StatisticsReport.js" afterPath="$PROJECT_DIR$/controller/api/StatisticsReport.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/index.js" afterPath="$PROJECT_DIR$/routes/index.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -24,12 +21,13 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="DB.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="DB.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DB/DB.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="249">
-              <caret line="167" column="73" lean-forward="true" selection-start-line="166" selection-start-column="16" selection-end-line="167" selection-end-column="73" />
+            <state relative-caret-position="179">
+              <caret line="853" column="24" lean-forward="false" selection-start-line="853" selection-start-column="4" selection-end-line="853" selection-end-column="24" />
               <folding>
+                <element signature="e#864#893#0" expanded="false" />
                 <element signature="e#936#1036#0" expanded="false" />
                 <element signature="e#1159#1592#0" expanded="false" />
                 <element signature="e#1673#2322#0" expanded="false" />
@@ -40,7 +38,7 @@
                 <element signature="e#5369#5921#0" expanded="false" />
                 <element signature="e#6000#6971#0" expanded="false" />
                 <element signature="e#7052#8027#0" expanded="false" />
-                <element signature="e#8475#8775#0" expanded="false" />
+                <element signature="e#8101#8403#0" expanded="false" />
                 <element signature="e#8847#9147#0" expanded="false" />
                 <element signature="e#9220#9535#0" expanded="false" />
                 <element signature="e#9593#9709#0" expanded="false" />
@@ -49,7 +47,15 @@
                 <element signature="e#10022#10106#0" expanded="false" />
                 <element signature="e#10145#10222#0" expanded="false" />
                 <element signature="e#10253#10345#0" expanded="false" />
-                <element signature="e#12698#15320#0" expanded="false" />
+                <element signature="e#10575#12438#0" expanded="false" />
+                <element signature="e#15578#18718#0" expanded="false" />
+                <element signature="e#18976#27946#0" expanded="false" />
+                <element signature="e#28204#30483#0" expanded="false" />
+                <element signature="e#30738#31987#0" expanded="false" />
+                <element signature="e#32245#33146#0" expanded="false" />
+                <element signature="e#33408#35437#0" expanded="false" />
+                <element signature="e#35695#36598#0" expanded="false" />
+                <element signature="n#!!block;n#convertStr#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -65,49 +71,32 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ReportController.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/controller/api/ReportController.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="286">
-              <caret line="127" column="7" lean-forward="true" selection-start-line="127" selection-start-column="7" selection-end-line="127" selection-end-column="7" />
-              <folding>
-                <element signature="n#!!block;n#timestampToTime#0" expanded="false" />
-                <element signature="n#!!block;n#selectTable#0" expanded="false" />
-                <element signature="n#!!block;n#IVRDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#AgentLoginDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#InboundDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#OutCallDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#AutomaticOutCallStatis#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#GatewayUse#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#WaitingTask#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#AcdQueueDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#CallHanguDetailed#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#agent_login#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#agent_acw#0;n#ReportController#0" expanded="false" />
-                <element signature="n#!!block;n#agent_aux#0;n#ReportController#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="StatisticsReport.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/controller/api/StatisticsReport.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-419">
-              <caret line="20" column="42" lean-forward="true" selection-start-line="20" selection-start-column="42" selection-end-line="20" selection-end-column="42" />
+            <state relative-caret-position="37">
+              <caret line="488" column="10" lean-forward="false" selection-start-line="488" selection-start-column="10" selection-end-line="488" selection-end-column="10" />
               <folding>
                 <element signature="n#!!block;n#Ivr_Statis#0;n#StatisticsReport#0" expanded="false" />
                 <element signature="n#!!block;n#Agent_CallStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#CallCountStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#AgentCountStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#OrgCountStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#OutCallStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#AgentACWStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#AgentServiceStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#AgentLoginStatis#0;n#StatisticsReport#0" expanded="false" />
+                <element signature="n#!!block;n#AgentlevelStatis#0;n#StatisticsReport#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/routes/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="440">
-              <caret line="26" column="71" lean-forward="true" selection-start-line="26" selection-start-column="71" selection-end-line="26" selection-end-column="71" />
+            <state relative-caret-position="137">
+              <caret line="19" column="0" lean-forward="true" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -116,7 +105,7 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="66">
+            <state relative-caret-position="198">
               <caret line="10" column="22" lean-forward="true" selection-start-line="10" selection-start-column="22" selection-end-line="10" selection-end-column="22" />
               <folding />
             </state>
@@ -135,10 +124,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>aseEncode</find>
-      <find>eventNameVal..&gt;</find>
-      <find>current_application_data</find>
-      <find>满意度</find>
       <find>variables</find>
       <find>cdr_variables</find>
       <find>fs_transfer_lua</find>
@@ -165,6 +150,10 @@
       <find>type</find>
       <find>moment</find>
       <find>Agent_CallStatis</find>
+      <find>acw</find>
+      <find>agent_acw</find>
+      <find>THEN 1 else 0 END</find>
+      <find>CallCountStatis</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -229,11 +218,11 @@
         <option value="$PROJECT_DIR$/logs/Api/api.-2020-07-09.log" />
         <option value="$PROJECT_DIR$/config/config.js" />
         <option value="$PROJECT_DIR$/controller/ModHelper.js" />
+        <option value="$PROJECT_DIR$/app.js" />
+        <option value="$PROJECT_DIR$/controller/api/ReportController.js" />
         <option value="$PROJECT_DIR$/controller/api/StatisticsReport.js" />
         <option value="$PROJECT_DIR$/routes/index.js" />
         <option value="$PROJECT_DIR$/DB/DB.js" />
-        <option value="$PROJECT_DIR$/app.js" />
-        <option value="$PROJECT_DIR$/controller/api/ReportController.js" />
       </list>
     </option>
   </component>
@@ -275,8 +264,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -303,68 +290,10 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="DB" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="controller" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="controller" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="api" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="CallCenterReport" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="config" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -565,7 +494,9 @@
       <workItem from="1594626994216" duration="2602000" />
       <workItem from="1595175058907" duration="1412000" />
       <workItem from="1595299562384" duration="17022000" />
-      <workItem from="1595818581725" duration="26767000" />
+      <workItem from="1595818581725" duration="46656000" />
+      <workItem from="1596443000838" duration="75000" />
+      <workItem from="1596446442595" duration="2214000" />
     </task>
     <task id="LOCAL-00001" summary="新增接口">
       <created>1591980522780</created>
@@ -578,7 +509,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="919736000" />
+    <option name="totallyTimeSpent" value="941914000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -590,15 +521,15 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1176" extended-state="7" />
+    <frame x="-8" y="-8" width="1936" height="1176" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16438356" sideWeight="0.49566296" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32821497" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26679462" sideWeight="0.5021075" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20498915" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29846448" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="npm" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.16754478" sideWeight="0.5043371" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31765833" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24973656" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23896353" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
@@ -635,7 +566,7 @@
           <option name="timeStamp" value="154" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="168" />
+      <option name="time" value="170" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="NodeJSConfigurationType">
@@ -792,6 +723,21 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="10" column="22" lean-forward="true" selection-start-line="10" selection-start-column="22" selection-end-line="10" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/controller/api/ReportController.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-572">
+          <caret line="127" column="7" lean-forward="true" selection-start-line="127" selection-start-column="7" selection-end-line="127" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/config/config.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="396">
@@ -800,61 +746,31 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="66">
-          <caret line="10" column="22" lean-forward="true" selection-start-line="10" selection-start-column="22" selection-end-line="10" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/routes/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="440">
-          <caret line="26" column="71" lean-forward="true" selection-start-line="26" selection-start-column="71" selection-end-line="26" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/controller/api/StatisticsReport.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-419">
-          <caret line="20" column="42" lean-forward="true" selection-start-line="20" selection-start-column="42" selection-end-line="20" selection-end-column="42" />
+        <state relative-caret-position="37">
+          <caret line="488" column="10" lean-forward="false" selection-start-line="488" selection-start-column="10" selection-end-line="488" selection-end-column="10" />
           <folding>
             <element signature="n#!!block;n#Ivr_Statis#0;n#StatisticsReport#0" expanded="false" />
             <element signature="n#!!block;n#Agent_CallStatis#0;n#StatisticsReport#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/controller/api/ReportController.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="286">
-          <caret line="127" column="7" lean-forward="true" selection-start-line="127" selection-start-column="7" selection-end-line="127" selection-end-column="7" />
-          <folding>
-            <element signature="n#!!block;n#timestampToTime#0" expanded="false" />
-            <element signature="n#!!block;n#selectTable#0" expanded="false" />
-            <element signature="n#!!block;n#IVRDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#AgentLoginDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#InboundDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#OutCallDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#AutomaticOutCallStatis#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#GatewayUse#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#WaitingTask#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#AcdQueueDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#CallHanguDetailed#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#agent_login#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#agent_acw#0;n#ReportController#0" expanded="false" />
-            <element signature="n#!!block;n#agent_aux#0;n#ReportController#0" expanded="false" />
+            <element signature="n#!!block;n#CallCountStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#AgentCountStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#OrgCountStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#OutCallStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#AgentACWStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#AgentServiceStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#AgentLoginStatis#0;n#StatisticsReport#0" expanded="false" />
+            <element signature="n#!!block;n#AgentlevelStatis#0;n#StatisticsReport#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/DB/DB.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="249">
-          <caret line="167" column="73" lean-forward="true" selection-start-line="166" selection-start-column="16" selection-end-line="167" selection-end-column="73" />
+        <state relative-caret-position="179">
+          <caret line="853" column="24" lean-forward="false" selection-start-line="853" selection-start-column="4" selection-end-line="853" selection-end-column="24" />
           <folding>
+            <element signature="e#864#893#0" expanded="false" />
             <element signature="e#936#1036#0" expanded="false" />
             <element signature="e#1159#1592#0" expanded="false" />
             <element signature="e#1673#2322#0" expanded="false" />
@@ -865,7 +781,7 @@
             <element signature="e#5369#5921#0" expanded="false" />
             <element signature="e#6000#6971#0" expanded="false" />
             <element signature="e#7052#8027#0" expanded="false" />
-            <element signature="e#8475#8775#0" expanded="false" />
+            <element signature="e#8101#8403#0" expanded="false" />
             <element signature="e#8847#9147#0" expanded="false" />
             <element signature="e#9220#9535#0" expanded="false" />
             <element signature="e#9593#9709#0" expanded="false" />
@@ -874,8 +790,24 @@
             <element signature="e#10022#10106#0" expanded="false" />
             <element signature="e#10145#10222#0" expanded="false" />
             <element signature="e#10253#10345#0" expanded="false" />
-            <element signature="e#12698#15320#0" expanded="false" />
+            <element signature="e#10575#12438#0" expanded="false" />
+            <element signature="e#15578#18718#0" expanded="false" />
+            <element signature="e#18976#27946#0" expanded="false" />
+            <element signature="e#28204#30483#0" expanded="false" />
+            <element signature="e#30738#31987#0" expanded="false" />
+            <element signature="e#32245#33146#0" expanded="false" />
+            <element signature="e#33408#35437#0" expanded="false" />
+            <element signature="e#35695#36598#0" expanded="false" />
+            <element signature="n#!!block;n#convertStr#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/routes/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="137">
+          <caret line="19" column="0" lean-forward="true" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
