@@ -3,12 +3,13 @@
  * 统计表报
  */
 const ModHelper = require('../ModHelper')
+var log = require("../log4j/logger_Api");
 var db = require("../../DB/DB"); //引入数据库封装模块
 
 function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, start, end, SelectType) {
     return new Promise((resolve, reject) => {
         try {
-            console.log("[StatisReport].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
+            log.info("[StatisReport].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table) {
                 case 'Ivr_Statis' :
@@ -56,6 +57,57 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
     });
 }
 
+function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch, start, end, SelectType) {
+    return new Promise((resolve, reject) => {
+        try {
+            log.info("[StatisReportCount].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
+            startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
+            switch (table) {
+                case 'Ivr_StatisCount' :
+                    resolve(db.Ivr_StatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'Agent_CallStatisCount' :
+                    resolve(db.Agent_CallStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'CallCountStatisCount' :
+                    resolve(db.CallCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentCountStatisCount' :
+                    resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'OrgCountStatisCount' :
+                    resolve(db.OrgCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'OutCallStatisCount' :
+                    resolve(db.OutCallStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentACWStatisCount' :
+                    resolve(db.AgentACWStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentServiceStatisCount' :
+                    resolve(db.AgentServiceStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentLoginStatisCount' :
+                    resolve(db.AgentLoginStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentlevelStatisCount' :
+                    resolve(db.AgentlevelStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+                case 'AgentlevelPropStatisCount' :
+                    resolve(db.AgentlevelPropStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
+
+
+
+                default :
+                    resolve('未知参数');
+            }
+        } catch (e) {
+            reject(e.message);
+        }
+    });
+}
+
 class StatisticsReport {
     /**
      * IVR 呼叫统计
@@ -76,12 +128,14 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
 
+            let count = await selectTableCount('Ivr_StatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('Ivr_Statis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -119,12 +173,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('Agent_CallStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('Agent_CallStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -162,12 +217,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('CallCountStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('CallCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -204,12 +260,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentCountStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -246,12 +303,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('OrgCountStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('OrgCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -288,12 +346,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('OutCallStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('OutCallStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -331,12 +390,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentACWStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentACWStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -373,12 +433,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentServiceStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentServiceStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -415,12 +476,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentLoginStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentLoginStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -458,12 +520,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentlevelStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentlevelStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,
@@ -500,12 +563,13 @@ class StatisticsReport {
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
 
 
-            let start = (page - 1) * 5; //当前页
+            let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-
+            let count = await selectTableCount('AgentlevelPropStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             let cs = await selectTable('AgentlevelPropStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
+                'total': count["0"].count,
                 'code': 0,
                 'message': '成功',
                 'page': page,

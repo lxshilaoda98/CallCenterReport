@@ -23,6 +23,7 @@ let query = function (sql, values) {
                     if (err) {
                         reject(err)
                     } else {
+
                         resolve(rows)
                     }
                     connection.release()
@@ -57,6 +58,19 @@ let findDataByPage_IVR = function (table, keys, phoneName, startTime_epoch, endT
     }
 
 }
+let findDataByPage_IVRCount = function (table, keys, phoneName, startTime_epoch, endTime_epoch, start, end) {
+
+    let _sql = "SELECT count(*) as count FROM ?? where caller_id_number=? and last_arg ='welcome.lua' and start_epoch between ? and ? "
+    if (phoneName == undefined) {
+        _sql = _sql.replace("caller_id_number=?", "1=1");
+
+        return query(_sql, [table, startTime_epoch, endTime_epoch, start, end])
+    } else {
+
+        return query(_sql, [table, phoneName, startTime_epoch, endTime_epoch, start, end])
+    }
+
+}
 
 let AgentLoginDetailed = function (startTime_epoch, endTime_epoch, start, end) {
 
@@ -66,6 +80,17 @@ let AgentLoginDetailed = function (startTime_epoch, endTime_epoch, start, end) {
         "LEFT JOIN( " +
         "select t2.uuid,t2.agentid,t2.createDataTime as 登出时间 from agent_statechange t2 where t2.LastStateName !='未登录状态' and t2.ChangeName in('未登录状态','异常签出')) ttt " +
         "ON tt.uuid = ttt.uuid  LIMIT ?,?"
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
+let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+
+    let _sql = "select count(*) as count from " +
+        "(select t1.uuid,t1.agentid,t1.createDataTime as 登录时间 from agent_statechange t1 where t1.LastStateName ='未登录状态' and t1.ChangeName not in ('未登录状态','异常签出') " +
+        "and t1.CreateDataTime BETWEEN ? and ?) tt " +
+        "LEFT JOIN( " +
+        "select t2.uuid,t2.agentid,t2.createDataTime as 登出时间 from agent_statechange t2 where t2.LastStateName !='未登录状态' and t2.ChangeName in('未登录状态','异常签出')) ttt " +
+        "ON tt.uuid = ttt.uuid "
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
@@ -81,6 +106,13 @@ let InboundDetailed = function (startTime_epoch, endTime_epoch, start, end) {
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+
+    let _sql = "SELECT count(*) as count from cdr_table_a_leg " +
+        "where last_app ='callcenter' AND start_stamp BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
 
 let OutCallDetailed = function (startTime_epoch, endTime_epoch, start, end) {
 
@@ -93,6 +125,16 @@ let OutCallDetailed = function (startTime_epoch, endTime_epoch, start, end) {
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let OutCallDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+
+    let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 " +
+        "where t1.last_app ='bridge' and t1.bleg_uuid is not null  " +
+        "AND t1.start_stamp BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
+
+
 
 let AutomaticOutCallStatis = function (startTime_epoch, endTime_epoch, start, end) {
 
@@ -110,6 +152,16 @@ let AutomaticOutCallStatis = function (startTime_epoch, endTime_epoch, start, en
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let AutomaticOutCallStatisCount = function (startTime_epoch, endTime_epoch, start, end) {
+
+    let _sql = "select count(*) as count " +
+        " from auto_task as t2 " +
+        "LEFT JOIN auto_importaction as t1 ON t1.Oid = t2.Importaction " +
+
+        "where t1.name is not NULL and  t1.CreateTime BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
 
 let GatewayUse = function (start, end) {
     let _sql = "select *  from (select t1.`memo` as 名称,t1.`concurrent` as 总共数量," +
@@ -120,6 +172,12 @@ let GatewayUse = function (start, end) {
 
     return query(_sql, [start, end])
 }
+let GatewayUseCount = function (start, end) {
+    let _sql = "select  count(*) as count from gateway";
+
+    return query(_sql, [start, end])
+}
+
 
 
 let WaitingTask = function (start, end) {
@@ -133,6 +191,14 @@ let WaitingTask = function (start, end) {
         "where t1.`Status` ='进行中' and t2.`Status` ='正常' LIMIT ?,?";
     return query(_sql, [start, end])
 }
+let WaitingTaskCount = function (start, end) {
+    let _sql = "select count(*) as count " +
+        "from auto_importaction t1 " +
+        "LEFT JOIN auto_task t2 on t1.Oid=t2.Importaction " +
+
+        "where t1.`Status` ='进行中' and t2.`Status` ='正常' ";
+    return query(_sql, [start, end])
+}
 
 let AcdQueueDetailed = function (startTime_epoch, endTime_epoch, start, end) {
     let _sql = "SELECT org AS 技能组, CCAgent AS 坐席,CallerANI AS 主机号码,QueueStartTime AS 排队开始时间,QueueEndTime AS 排队结束时间," +
@@ -144,6 +210,12 @@ let AcdQueueDetailed = function (startTime_epoch, endTime_epoch, start, end) {
         "WHEN CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)ELSE 0 END) AS 等待时长," +
         "CCHangupCause AS 挂断原因,CCancelReasonName AS 挂断方 FROM callstart " +
         "WHERE QueueStartTime IS NOT NULL and QueueStartTime BETWEEN ? and ? LIMIT ?,?"
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
+let AcdQueueDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count FROM callstart " +
+        "WHERE QueueStartTime IS NOT NULL and QueueStartTime BETWEEN ? and ? "
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
@@ -162,10 +234,22 @@ let CallHanguDetailed = function (startTime_epoch, endTime_epoch, start, end) {
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let CallHanguDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count FROM callstart " +
+        "WHERE CCBridgeTerminatedTime IS NULL and QueueStartTime BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
 
 let agent_login = function (startTime_epoch, endTime_epoch, start, end) {
     let _sql = "SELECT uuid,CreateStartTime as 开始时间,CreateEndTime as 结束时间,AgentId as 坐席工号,TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime) as 持续时间 " +
         "from agent_login where CreateStartTime BETWEEN ? and ? LIMIT ?,?"
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
+let agent_loginCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count " +
+        "from agent_login where CreateStartTime BETWEEN ? and ? "
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
@@ -176,6 +260,12 @@ let agent_acw = function (startTime_epoch, endTime_epoch, start, end) {
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let agent_acwCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count " +
+        "from agent_acw where CreateStartTime BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
 
 let agent_aux = function (startTime_epoch, endTime_epoch, start, end) {
     let _sql = "SELECT uuid,CreateStartTime as 开始时间,CreateEndTime as 结束时间,AgentId as 坐席工号,TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime) as 持续时间 " +
@@ -183,10 +273,22 @@ let agent_aux = function (startTime_epoch, endTime_epoch, start, end) {
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
+let agent_auxCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count " +
+        "from agent_aux where CreateStartTime BETWEEN ? and ? "
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
 
 let agent_hold = function (startTime_epoch, endTime_epoch, start, end) {
     let _sql = "SELECT uuid,inAni as 来电号码,CreateStartTime as 开始时间,CreateEndTime as 结束时间,AgentId as 坐席工号,TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime) as 持续时间 " +
         "from agent_hold where CreateStartTime BETWEEN ? and ? LIMIT ?,?"
+
+    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+}
+let agent_holdCount = function (startTime_epoch, endTime_epoch, start, end) {
+    let _sql = "SELECT count(*) as count " +
+        "from agent_hold where CreateStartTime BETWEEN ? and ? "
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
@@ -243,7 +345,7 @@ let count = function (table) {
  */
 let Ivr_Statis = function (startTime_epoch, endTime_epoch, start, end, SelectType) {
     try {
-        console.log('asdasdasd')
+
         let _sql = "select DATE_FORMAT(IvrStartTime, '%m/%d') as 日,count(*) as 个数,sum(TIMESTAMPDIFF(SECOND,IvrStartTime,CallEndTime)) as 总时长 " +
             " from callstart where IvrStartTime BETWEEN ? and ? " +
             "group by CONVERT(IvrStartTime, DATE) LIMIT ?,?"; //默认日
@@ -267,6 +369,40 @@ let Ivr_Statis = function (startTime_epoch, endTime_epoch, start, end, SelectTyp
                 _sql = "select DATE_FORMAT(IvrStartTime, '%H') as 小时,count(*) as 个数,sum(TIMESTAMPDIFF(SECOND,IvrStartTime,CallEndTime)) as 总时长 " +
                     " from callstart where IvrStartTime BETWEEN ? and ? " +
                     "group by DATE_FORMAT(IvrStartTime, '%H') LIMIT ?,?";
+                break;
+        }
+        return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+    } catch (e) {
+        return e.message;
+    }
+
+}
+let Ivr_StatisCount = function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+    try {
+
+        let _sql = "select count(*) as count from (select DATE_FORMAT(IvrStartTime, '%m/%d') as 日 " +
+            " from callstart where IvrStartTime BETWEEN ? and ? " +
+            "group by CONVERT(IvrStartTime, DATE)) as t1 "; //默认日
+        switch (SelectType) {
+            case '日':
+                _sql = "select count(*) as count from (select DATE_FORMAT(IvrStartTime, '%m/%d') as 日 " +
+                    " from callstart where IvrStartTime BETWEEN ? and ? " +
+                    "group by CONVERT(IvrStartTime, DATE)) as t1 ";
+                break;
+            case '月':
+                _sql = "select count(*) as count from (select DATE_FORMAT( IvrStartTime, '%m' ) as 月 " +
+                    " from callstart where IvrStartTime BETWEEN ? and ? " +
+                    "group by DATE_FORMAT( IvrStartTime, '%m' )) as t1 ";
+                break;
+            case '年':
+                _sql = "select count(*) as count from (select DATE_FORMAT( IvrStartTime, '%Y' ) as 年 " +
+                    " from callstart where IvrStartTime BETWEEN ? and ? " +
+                    "group by DATE_FORMAT( IvrStartTime, '%Y' )) as t1 ";
+                break;
+            case '时':
+                _sql = "select count(*) as count from (select DATE_FORMAT(IvrStartTime, '%H') as 小时 " +
+                    " from callstart where IvrStartTime BETWEEN ? and ? " +
+                    "group by DATE_FORMAT(IvrStartTime, '%H')) as t1 ";
                 break;
         }
         return query(_sql, [startTime_epoch, endTime_epoch, start, end])
@@ -344,7 +480,22 @@ let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, en
     }
 
 }
+let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+    try {
+        let _sql = "select count(*) as count from(select agents.name as 坐席名称 " +
+            "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
+            "where callstart.IvrStartTime BETWEEN ? and ? " +
+            "group by agents.name ) t1";
 
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+
+}
 
 /**
  * 综合呼叫统计
@@ -417,7 +568,25 @@ let CallCountStatis = async function (startTime_epoch, endTime_epoch, start, end
     }
 
 }
+let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+    var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+    try {
+        let _sql = "select count(*) as count from(select :convert as 日期 " +
+            "from callstart where IvrStartTime BETWEEN ? and ? " +
+            "GROUP BY :convert) as t1 ";
 
+        _sql = _sql.replace(/:convert/g, groupByStr)
+
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+
+}
 /**
  * 坐席综合统计
  * @param startTime_epoch
@@ -597,7 +766,23 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
         return e.message;
     }
 }
+let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
 
+    try {
+        let _sql = "select count(*) as count from (SELECT AgentId as 坐席工号,:convert as time " +
+            `from agent_login where CreateStartTime BETWEEN ? and ? group by AgentId,:convert) as t1`;
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 
 /**
  * 技能组综合统计
@@ -647,6 +832,27 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
         return e.message;
     }
 }
+let OrgCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from (select Org as 技能组,:convert as time " +
+            "from callstart " +
+            "where Org is not null and QueueStartTime is not null " +
+            "and IvrStartTime BETWEEN ? and ? " +
+            "GROUP BY Org,:convert ) as t1";
+
+        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 
 /**
  * 呼出电话统计
@@ -689,6 +895,26 @@ let OutCallStatis = async function (startTime_epoch, endTime_epoch, start, end, 
         return e.message;
     }
 }
+let OutCallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from(select accountcode " +
+            "from cdr_table_a_leg  " +
+            "where last_app='bridge' and start_stamp BETWEEN ? and ? " +
+            "GROUP BY accountcode,:convert ) as t1";
+
+        var groupByStr = await convertStr(SelectType, 'start_stamp');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 
 /**
  * 坐席休息时间统计
@@ -719,6 +945,25 @@ let AgentACWStatis = async function (startTime_epoch, endTime_epoch, start, end,
             //由于时间格式问题，所以新增一个字段
             arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
         }
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+let AgentACWStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from(SELECT AgentId as 坐席,:convert as time from agent_acw " +
+            "where CreateStartTime BETWEEN ? and ? " +
+            "GROUP BY AgentId ,:convert ) as t1 ";
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
 
         return arr;
 
@@ -772,6 +1017,24 @@ let AgentServiceStatis = async function (startTime_epoch, endTime_epoch, start, 
         return e.message;
     }
 }
+let AgentServiceStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from( select :convert as time,CCAgent from callstart " +
+            "where CCAgent is not null AND IvrStartTime BETWEEN ? and ? " +
+            "GROUP BY :convert,CCAgent ) as t1";
+
+        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 
 /**
  * 坐席登录统计
@@ -809,7 +1072,24 @@ let AgentLoginStatis = async function (startTime_epoch, endTime_epoch, start, en
         return e.message;
     }
 }
+let AgentLoginStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
 
+    try {
+        let _sql = "select count(*) as count from (SELECT AgentId as 坐席,:convert as time from agent_login " +
+            "where CreateStartTime BETWEEN ? and ? " +
+            "GROUP BY AgentId ,:convert ) as t1";
+
+        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStr);
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 /**
  * 坐席满意度评价
  * @param startTime_epoch
@@ -840,6 +1120,20 @@ let AgentlevelStatis = async function (startTime_epoch, endTime_epoch, start, en
         return e.message;
     }
 }
+let AgentlevelStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from agentservicelevel " +
+            "where PjCreateTime BETWEEN ? and ? ";
+
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
 
 /**
  * 坐席满意度评价比例
@@ -862,10 +1156,24 @@ let AgentlevelPropStatis = async function (startTime_epoch, endTime_epoch, start
             "concat(ROUND(sum( CASE WHEN nLevel ='1' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%') AS 非常满意度比例," +
             "concat(ROUND(sum( CASE WHEN nLevel ='2' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 满意度比例," +
             "concat(ROUND(sum( CASE WHEN nLevel ='3' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 不满意度比例," +
-            "concat(ROUND(sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 参评比例 " +
+            "concat(ROUND(sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 参评比例, " +
+            "concat(ROUND(sum( CASE WHEN CallDirection ='in' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼入占比, "+
+            "concat(ROUND(sum( CASE WHEN CallDirection ='out' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼出占比 "+
             " from agentservicelevel  where PjCreateTime BETWEEN ? and ? group BY AgentId LIMIT ?,? ";
 
 
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+
+        return arr;
+
+    } catch (e) {
+        return e.message;
+    }
+}
+let AgentlevelPropStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+
+    try {
+        let _sql = "select count(*) as count from (select AgentId as 坐席 from agentservicelevel  where PjCreateTime BETWEEN ? and ? group BY AgentId) as t1";
         let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
 
         return arr;
@@ -905,6 +1213,12 @@ function convertStr(SelectType, name) {
 module.exports = {
     Ivr_Statis, Agent_CallStatis, CallCountStatis, AgentCountStatis,OrgCountStatis,OutCallStatis,AgentACWStatis,AgentServiceStatis,AgentLoginStatis,
     AgentlevelStatis,AgentlevelPropStatis,
+
+    GatewayUseCount,AutomaticOutCallStatisCount,findDataByPage_IVRCount,AgentLoginDetailedCount,InboundDetailedCount,OutCallDetailedCount,WaitingTaskCount,
+    AcdQueueDetailedCount,CallHanguDetailedCount,agent_loginCount,agent_acwCount,agent_auxCount,agent_holdCount,
+
+    Ivr_StatisCount,Agent_CallStatisCount,CallCountStatisCount,AgentCountStatisCount,OrgCountStatisCount,OutCallStatisCount,AgentACWStatisCount,AgentServiceStatisCount,
+    AgentLoginStatisCount,AgentlevelStatisCount,AgentlevelPropStatisCount,
 
 
     agent_login, agent_aux, agent_acw, agent_hold,
