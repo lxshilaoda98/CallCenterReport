@@ -1,6 +1,6 @@
 const mysql = require("mysql")
 var moment = require('moment');
-
+var log = require("../controller/log4j/logger_Api");
 const config = require('../config/config.js').getConfig('database');
 
 
@@ -13,6 +13,7 @@ var pool = mysql.createPool({
 });
 
 let query = function (sql, values) {
+    log.info("运行sql..>"+sql)
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
             if (err) {

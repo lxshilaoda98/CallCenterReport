@@ -1,36 +1,3 @@
 <br />
- asdasds
+ 报表系统对应接口
 
-<document type="freeswitch/xml">
-    <section name="directory">
-        <domain name="1999">
-            <params>
-                <param name="dial-string" value="{presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(${dialed_user}@${dialed_domain})}"/>
-            </params>
-            <groups>
-                <group name="default">
-                    <users>
-                        <user id="1999">
-                            <params>
-                                <param name="password" value="1234"/>
-                                <param name="vm-password" value="1234"/>
-                            </params>
-                            <variables>
-                                <variable name="toll_allow" value="domestic,international,local"/>
-                                <variable name="accountcode" value="<?php echo $user; ?>"/>
-                                <variable name="user_context" value="default"/>
-                                <variable name="effective_caller_id_name" value="FreeSWITCH-CN"/>
-                                <variable name="effective_caller_id_number" value="<?php echo     $user;?>"/>
-                                <!-- <variable name="outbound_caller_id_name" value="$${outbound_caller_name}"/> -->
-                                <!-- <variable name="outbound_caller_id_number" value="$${outbound_caller_id}"/> -->
-                                <variable name="callgroup" value="default"/>
-                                <variable name="sip-force-contact" value="NDLB-connectile-dysfunction"/>
-                                <variable name="x-powered-by" value="http://www.freeswitch.org.cn"/>
-                            </variables>
-                        </user>
-                    </users>
-                </group>
-            </groups>
-        </domain>
-    </section>
-</document>
