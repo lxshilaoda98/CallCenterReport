@@ -13,14 +13,13 @@ var pool = mysql.createPool({
 });
 
 let query = function (sql, values) {
-    log.info("运行sql..>"+sql)
+    console.log("运行sql..>"+sql)
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
             if (err) {
                 resolve(err)
             } else {
                 connection.query(sql, values, (err, rows) => {
-
                     if (err) {
                         reject(err)
                     } else {
@@ -49,26 +48,27 @@ let findDataById = function (table, id) {
 //ivr未接= IVR放弃明细
 let findDataByPage_IVR = function (table, keys, phoneName, startTime_epoch, endTime_epoch, start, end) {
 
-    let _sql = "SELECT ?? FROM ?? where caller_id_number=? and last_arg ='welcome.lua' and start_epoch between ? and ?  LIMIT ? , ?"
+    let _sql = "SELECT * FROM ?? where caller_id_number=? and last_arg ='GOWelcome.lua' and start_epoch between ? and ?  LIMIT ? , ?"
+    console.log("sql==>"+_sql)
+    console.log([keys, table, startTime_epoch, endTime_epoch, start, end])
     if (phoneName == undefined) {
         _sql = _sql.replace("caller_id_number=?", "1=1");
-        return query(_sql, [keys, table, startTime_epoch, endTime_epoch, start, end])
+        return query(_sql, [table, startTime_epoch, endTime_epoch, start, end])
     } else {
-
-        return query(_sql, [keys, table, phoneName, startTime_epoch, endTime_epoch, start, end])
+        return query(_sql, [table, phoneName, startTime_epoch, endTime_epoch, start, end])
     }
 
 }
 let findDataByPage_IVRCount = function (table, keys, phoneName, startTime_epoch, endTime_epoch, start, end) {
 
-    let _sql = "SELECT count(*) as count FROM ?? where caller_id_number=? and last_arg ='welcome.lua' and start_epoch between ? and ? "
+    let _sql = "SELECT count(*) as count FROM ?? where caller_id_number=? and last_arg ='GOWelcome.lua' and start_epoch between ? and ? "
     if (phoneName == undefined) {
+        console.log("运行语句1")
         _sql = _sql.replace("caller_id_number=?", "1=1");
-
-        return query(_sql, [table, startTime_epoch, endTime_epoch, start, end])
+        return query(_sql, ["cdr_table_a_leg", startTime_epoch, endTime_epoch, start, end])
     } else {
-
-        return query(_sql, [table, phoneName, startTime_epoch, endTime_epoch, start, end])
+        console.log("运行语句2")
+        return query(_sql, ["cdr_table_a_leg", phoneName, startTime_epoch, endTime_epoch])
     }
 
 }

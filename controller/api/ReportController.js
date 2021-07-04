@@ -1,16 +1,11 @@
 var db = require("../../DB/DB"); //引入数据库封装模块
 var log = require("../log4j/logger_Api");
-
+let moment = require('moment');
 //时间戳转换成日期
 function timestampToTime(timestamp) {
-    var date = new Date(timestamp * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
-    var Y = date.getFullYear() + '-';
-    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
-    var D = date.getDate() + ' ';
-    var h = date.getHours() + ':';
-    var m = date.getMinutes() + ':';
-    var s = date.getSeconds();
-    return Y + M + D + h + m + s;
+    let start = moment(parseInt(timestamp)).format('YYYY-MM-DD hh:mm:ss');
+    return start;
+
 }
 /**
  *
@@ -158,9 +153,10 @@ class ReportController {
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
 
-            let keys = ['*'];
+            let keys = '*';
             let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
+
 
 
             if (startTime_epoch == undefined || endTime_epoch == undefined || startTime_epoch == "" || endTime_epoch == "") {
@@ -170,7 +166,7 @@ class ReportController {
                 }
             } else {
                 let count = await selectTableCount('cdr_table_a_legCount', '', phoneName, startTime_epoch, endTime_epoch, start, end);
-
+                console.log(count);
                 let cs = await selectTable('cdr_table_a_leg', keys, phoneName, startTime_epoch, endTime_epoch, start, end);
 
                 body = {

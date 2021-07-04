@@ -8,9 +8,9 @@ const configParams = {
     database: {
         DATABASE: 'freeswitch',
         USERNAME: 'root',
-        PASSWORD: 'root',
-        PORT: '3307',
-        HOST: '127.0.0.1'
+        PASSWORD: '2krUCTwtENQCJDaL',
+        PORT: '3300',
+        HOST: '39.97.233.230'
     }
 };
 const getConfig = module=>(configParams[module]!==undefined)?configParams[module]:{};
