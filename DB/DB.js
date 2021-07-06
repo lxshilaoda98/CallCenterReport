@@ -97,20 +97,42 @@ let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, e
 }
 
 
-let InboundDetailed = function (startTime_epoch, endTime_epoch, start, end) {
+let InboundDetailed =async function (startTime_epoch, endTime_epoch, start, end) {
 
-    let _sql = "SELECT t1.accountcode as 账号,t1.start_stamp as 呼叫开始时间, t1.answer_stamp AS IVR应答时间,t1.caller_id_number AS 来电号码,t1.destination_number as 被叫号码,t1.duration as IVR持续时间," +
-        "t1.progress_mediasec as 早起媒体时间,t2.start_stamp as 服务时间,t2.Billsec as 通话时间,t2.end_stamp as 通话结束时间,t1.sip_hangup_disposition as 挂机方 " +
-        "from cdr_table_a_leg t1 " +
-        "LEFT JOIN cdr_table_b_leg  t2 on t1.bleg_uuid = t2.uuid " +
-        "where t1.last_app ='callcenter' AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?"
+    let _sql = `SELECT t1.uuid,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
+t1.billsec,t3.answer_stamp as calleering_stamp,
+case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
+case when t1.answer_epoch =0 THEN '未接听' else '接听' END as answer_status,
+case  t1.sip_hangup_disposition WHEN 'send_bye' THEN '被叫挂机'  
+WHEN 'recv_cancel' then '呼叫取消' 
+WHEN 'send_refuse' then '呼叫拒绝'
+when 'recv_bye' THEN '主叫挂机'
+else t1.sip_hangup_disposition END as hangup_case,
+case t2.nLevel WHEN t2.nLevel is not NULL THEN t2.nLevelName else '未评价' END as nLevelName
+FROM cdr_table_a_leg as t1 
+LEFT JOIN agentservicelevel as t2 ON t1.uuid=t2.uuid
+left join cdr_table_b_leg t3 on t1.bleg_uuid=t3.uuid
+where t1.bleg_uuid is not null
+ AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?`
+    let table =await query(_sql, [startTime_epoch, endTime_epoch, start, end])
 
-    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+    //添加元素
+    //如果是呼入电话的话，计算必要元素
+
+    for(let i=0;i<table.length;i++){
+        if (table[i]["call_type"]=="呼入"){
+            table[i].ivranswer_stamp=table[i]["calleering_stamp"];
+        }else{
+            table[i].ivranswer_stamp=null;
+        }
+    }
+
+    return table
 }
 let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
 
     let _sql = "SELECT count(*) as count from cdr_table_a_leg " +
-        "where last_app ='callcenter' AND start_stamp BETWEEN ? and ? "
+        "where bleg_uuid is not null and start_stamp BETWEEN ? and ? "
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
