@@ -13,7 +13,7 @@ var pool = mysql.createPool({
 });
 
 let query = function (sql, values) {
-    console.log("运行sql..>"+sql)
+    console.log("运行sql..>" + sql)
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
             if (err) {
@@ -49,7 +49,7 @@ let findDataById = function (table, id) {
 let findDataByPage_IVR = function (table, keys, phoneName, startTime_epoch, endTime_epoch, start, end) {
 
     let _sql = "SELECT * FROM ?? where caller_id_number=? and last_arg ='GOWelcome.lua' and start_epoch between ? and ?  LIMIT ? , ?"
-    console.log("sql==>"+_sql)
+    console.log("sql==>" + _sql)
     console.log([keys, table, startTime_epoch, endTime_epoch, start, end])
     if (phoneName == undefined) {
         _sql = _sql.replace("caller_id_number=?", "1=1");
@@ -97,7 +97,7 @@ let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, e
 }
 
 
-let InboundDetailed =async function (startTime_epoch, endTime_epoch, start, end) {
+let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end) {
 
     let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
 t1.billsec,t3.answer_stamp as calleering_stamp,
@@ -126,18 +126,18 @@ left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
 where t1.bleg_uuid is not null
  AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?`
-    let table =await query(_sql, [startTime_epoch, endTime_epoch, start, end])
+    let table = await query(_sql, [startTime_epoch, endTime_epoch, start, end])
 
     //添加元素
     //如果是呼入电话的话，计算必要元素
 
-    for(let i=0;i<table.length;i++){
+    for (let i = 0; i < table.length; i++) {
         let uuid = table[i]["uuid"];
-        if (uuid !=""){
-          let hold =  await query("select count(*) as count from agent_hold where uuid=?",[table[i]["uuid"]])
-            table[i].holdNumber= hold[0]["count"];
-        }else{
-            table[i].holdNumber=0;
+        if (uuid != "") {
+            let hold = await query("select count(*) as count from agent_hold where uuid=?", [table[i]["uuid"]])
+            table[i].holdNumber = hold[0]["count"];
+        } else {
+            table[i].holdNumber = 0;
         }
     }
 
@@ -170,7 +170,6 @@ let OutCallDetailedCount = function (startTime_epoch, endTime_epoch, start, end)
 
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
-
 
 
 let AutomaticOutCallStatis = function (startTime_epoch, endTime_epoch, start, end) {
@@ -214,7 +213,6 @@ let GatewayUseCount = function (start, end) {
 
     return query(_sql, [start, end])
 }
-
 
 
 let WaitingTask = function (start, end) {
@@ -778,23 +776,23 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
                 Math.round(arr[i]["后处理时长"] / zPhone);
 
             arr[i].后处理率 = arr[i]["后处理时长"] == null ? 0 :
-                Math.round((arr[i]["后处理时长"] / arr[i]["登录总时长"])*100) + '%';
+                Math.round((arr[i]["后处理时长"] / arr[i]["登录总时长"]) * 100) + '%';
 
             arr[i].呼出占比 = arr[i]["呼出通话时长"] == null ? 0 :
-                Math.round((arr[i]["呼出通话时长"] / arr[i]["登录总时长"])*100) + '%';
+                Math.round((arr[i]["呼出通话时长"] / arr[i]["登录总时长"]) * 100) + '%';
 
             arr[i].呼入占比 = arr[i]["呼入通话时长"] == null ? 0 :
-                Math.round((arr[i]["呼入通话时长"] / arr[i]["登录总时长"])*100) + '%';
+                Math.round((arr[i]["呼入通话时长"] / arr[i]["登录总时长"]) * 100) + '%';
 
             arr[i].空闲率 = arr[i]["空闲时长"] == null ? 0 :
-                Math.round((arr[i]["空闲时长"] / arr[i]["登录总时长"])*100) + '%';
+                Math.round((arr[i]["空闲时长"] / arr[i]["登录总时长"]) * 100) + '%';
 
             arr[i].小休率 = arr[i]["小休时长"] == null ? 0 :
-                Math.round((arr[i]["小休时长"] / arr[i]["登录总时长"])*100) + '%';
+                Math.round((arr[i]["小休时长"] / arr[i]["登录总时长"]) * 100) + '%';
 
-            arr[i].非工作率 = Math.round(((arr[i]["小休时长"]+arr[i]["后处理时长"]) / arr[i]["登录总时长"])*100) + '%';
+            arr[i].非工作率 = Math.round(((arr[i]["小休时长"] + arr[i]["后处理时长"]) / arr[i]["登录总时长"]) * 100) + '%';
 
-            arr[i].工作率 = Math.round(((arr[i]["呼入通话时长"]+arr[i]["呼出通话时长"]+arr[i]["后处理时长"]) / arr[i]["登录总时长"])*100) + '%';
+            arr[i].工作率 = Math.round(((arr[i]["呼入通话时长"] + arr[i]["呼出通话时长"] + arr[i]["后处理时长"]) / arr[i]["登录总时长"]) * 100) + '%';
         }
 
         return arr;
@@ -1194,8 +1192,8 @@ let AgentlevelPropStatis = async function (startTime_epoch, endTime_epoch, start
             "concat(ROUND(sum( CASE WHEN nLevel ='2' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 满意度比例," +
             "concat(ROUND(sum( CASE WHEN nLevel ='3' THEN 1 ELSE 0 END) /sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) *100,0),'%')AS 不满意度比例," +
             "concat(ROUND(sum( CASE WHEN nLevel !='' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 参评比例, " +
-            "concat(ROUND(sum( CASE WHEN CallDirection ='in' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼入占比, "+
-            "concat(ROUND(sum( CASE WHEN CallDirection ='out' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼出占比 "+
+            "concat(ROUND(sum( CASE WHEN CallDirection ='in' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼入占比, " +
+            "concat(ROUND(sum( CASE WHEN CallDirection ='out' THEN 1 ELSE 0 END) / count(*) * 100,0),'%') AS 呼出占比 " +
             " from agentservicelevel  where PjCreateTime BETWEEN ? and ? group BY AgentId LIMIT ?,? ";
 
 
@@ -1248,17 +1246,49 @@ function convertStr(SelectType, name) {
 
 
 module.exports = {
-    Ivr_Statis, Agent_CallStatis, CallCountStatis, AgentCountStatis,OrgCountStatis,OutCallStatis,AgentACWStatis,AgentServiceStatis,AgentLoginStatis,
-    AgentlevelStatis,AgentlevelPropStatis,
+    Ivr_Statis,
+    Agent_CallStatis,
+    CallCountStatis,
+    AgentCountStatis,
+    OrgCountStatis,
+    OutCallStatis,
+    AgentACWStatis,
+    AgentServiceStatis,
+    AgentLoginStatis,
+    AgentlevelStatis,
+    AgentlevelPropStatis,
 
-    GatewayUseCount,AutomaticOutCallStatisCount,findDataByPage_IVRCount,AgentLoginDetailedCount,InboundDetailedCount,OutCallDetailedCount,WaitingTaskCount,
-    AcdQueueDetailedCount,CallHanguDetailedCount,agent_loginCount,agent_acwCount,agent_auxCount,agent_holdCount,
+    GatewayUseCount,
+    AutomaticOutCallStatisCount,
+    findDataByPage_IVRCount,
+    AgentLoginDetailedCount,
+    InboundDetailedCount,
+    OutCallDetailedCount,
+    WaitingTaskCount,
+    AcdQueueDetailedCount,
+    CallHanguDetailedCount,
+    agent_loginCount,
+    agent_acwCount,
+    agent_auxCount,
+    agent_holdCount,
 
-    Ivr_StatisCount,Agent_CallStatisCount,CallCountStatisCount,AgentCountStatisCount,OrgCountStatisCount,OutCallStatisCount,AgentACWStatisCount,AgentServiceStatisCount,
-    AgentLoginStatisCount,AgentlevelStatisCount,AgentlevelPropStatisCount,
+    Ivr_StatisCount,
+    Agent_CallStatisCount,
+    CallCountStatisCount,
+    AgentCountStatisCount,
+    OrgCountStatisCount,
+    OutCallStatisCount,
+    AgentACWStatisCount,
+    AgentServiceStatisCount,
+    AgentLoginStatisCount,
+    AgentlevelStatisCount,
+    AgentlevelPropStatisCount,
 
 
-    agent_login, agent_aux, agent_acw, agent_hold,
+    agent_login,
+    agent_aux,
+    agent_acw,
+    agent_hold,
     CallHanguDetailed,
     AcdQueueDetailed,
     WaitingTask,
