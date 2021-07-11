@@ -3,7 +3,8 @@ var log = require("../log4j/logger_Api");
 let moment = require('moment');
 //时间戳转换成日期
 function timestampToTime(timestamp) {
-    let start = moment(parseInt(timestamp)).format('YYYY-MM-DD hh:mm:ss');
+    let start = moment(parseInt(timestamp)).format('YYYY-MM-DD HH:mm:ss');
+    console.log("==>",start)
     return start;
 
 }
