@@ -97,35 +97,50 @@ let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, e
 }
 
 
-let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end) {
+let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end,keys) {
 
     let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
-t1.billsec,t3.answer_stamp as calleering_stamp,
-case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
-case when t1.answer_epoch =0 THEN '未接听' else '接听' END as answer_status,
-case  t1.sip_hangup_disposition WHEN 'send_bye' THEN '被叫挂机'  
-WHEN 'recv_cancel' then '接受取消' 
-WHEN 'send_refuse' then '呼叫拒绝'
-when 'recv_bye' THEN '主叫挂机'
-when 'send_cancel' THEN '呼叫取消'
-else t1.sip_hangup_disposition END as hangup_case,
-t5.CCAgent as ccagent,t5.IvrStartTime as ivrstarttime,t5.QueueStartTime as queuestarttime, t5.QueueEndTime as queueendtime,t5.CCOfferingTime as ccofferringtime,
-t5.CCAgentCalledTime as ccagentcalledtime,t5.CCAgentAnsweredTime as ccagentansweredtime,t5.CCHangupCauseTime as cchangupcausetime,t5.CCBridgeTerminatedTime as ccbridgeterminatedtime,
-TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime) queue_times,
-TIMESTAMPDIFF(SECOND,t5.CCAgentCalledTime,t5.CCAgentAnsweredTime) ring_times,
-(CASE WHEN t5.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCAgentAnsweredTime)
-WHEN t5.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCHangupCauseTime)
-WHEN t5.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime)ELSE 0 END) AS wait_times, 
-case t2.nLevel WHEN t2.nLevel is not NULL THEN t2.nLevelName else '未评价' END as nlevelname,t4.ringnum,t4.file
-FROM cdr_table_a_leg as t1 
-LEFT JOIN agentservicelevel as t2 ON t1.uuid=t2.uuid
-left join cdr_table_b_leg t3 on t1.bleg_uuid=t3.uuid
-left JOIN recordlog t4 on t1.uuid =t4.uuid
-left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
-left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
-left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-where t1.bleg_uuid is not null
- AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?`
+                t1.billsec,t3.answer_stamp as calleering_stamp,
+                case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
+                case when t1.answer_epoch =0 THEN '未接听' else '接听' END as answer_status,
+                case  t1.sip_hangup_disposition WHEN 'send_bye' THEN '被叫挂机'  
+                WHEN 'recv_cancel' then '接受取消' 
+                WHEN 'send_refuse' then '呼叫拒绝'
+                when 'recv_bye' THEN '主叫挂机'
+                when 'send_cancel' THEN '呼叫取消'
+                else t1.sip_hangup_disposition END as hangup_case,
+                t5.CCAgent as ccagent,t5.IvrStartTime as ivrstarttime,t5.QueueStartTime as queuestarttime, t5.QueueEndTime as queueendtime,t5.CCOfferingTime as ccofferringtime,
+                t5.CCAgentCalledTime as ccagentcalledtime,t5.CCAgentAnsweredTime as ccagentansweredtime,t5.CCHangupCauseTime as cchangupcausetime,t5.CCBridgeTerminatedTime as ccbridgeterminatedtime,
+                TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime) queue_times,
+                TIMESTAMPDIFF(SECOND,t5.CCAgentCalledTime,t5.CCAgentAnsweredTime) ring_times,
+                (CASE WHEN t5.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCAgentAnsweredTime)
+                WHEN t5.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCHangupCauseTime)
+                WHEN t5.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime)ELSE 0 END) AS wait_times, 
+                case t2.nLevel WHEN t2.nLevel is not NULL THEN t2.nLevelName else '未评价' END as nlevelname,t4.ringnum,t4.file
+                FROM cdr_table_a_leg as t1 
+                LEFT JOIN agentservicelevel as t2 ON t1.uuid=t2.uuid
+                left join cdr_table_b_leg t3 on t1.bleg_uuid=t3.uuid
+                left JOIN recordlog t4 on t1.uuid =t4.uuid
+                left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
+                left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
+                left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
+                where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid
+                 AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?`
+    if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
+        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
+    }else{
+        _sql=_sql.replace("#jdAgent","");
+    }
+    if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
+        _sql=_sql.replace("#OrgId",`and t5.Org in (${keys["OrgId"]})`);
+    }else {
+        _sql=_sql.replace("#OrgId","");
+    }
+    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
+        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
+    }else{
+        _sql=_sql.replace("#CallUid","");
+    }
     let table = await query(_sql, [startTime_epoch, endTime_epoch, start, end])
 
     //添加元素
@@ -143,11 +158,26 @@ where t1.bleg_uuid is not null
 
     return table
 }
-let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end) {
+let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,keys) {
 
-    let _sql = "SELECT count(*) as count from cdr_table_a_leg " +
-        "where bleg_uuid is not null and start_stamp BETWEEN ? and ? "
+    let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
+        "where bleg_uuid is not null #jdAgent #OrgId #CallUid and start_stamp BETWEEN ? and ? "
 
+    if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
+        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
+    }else{
+        _sql=_sql.replace("#jdAgent","");
+    }
+    if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
+        _sql=_sql.replace("#OrgId",`and t5.Org in (${keys["OrgId"]})`);
+    }else {
+        _sql=_sql.replace("#OrgId","");
+    }
+    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
+        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
+    }else{
+        _sql=_sql.replace("#CallUid","");
+    }
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
 

@@ -32,7 +32,7 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                     resolve(db.AgentLoginDetailed(startTime_epoch, endTime_epoch, start, end));
                     break;
                 case 'InboundDetailed':
-                    resolve(db.InboundDetailed(startTime_epoch, endTime_epoch, start, end));
+                    resolve(db.InboundDetailed(startTime_epoch, endTime_epoch, start, end,keys));
                     break;
                 case 'OutCallDetailed':
                     resolve(db.OutCallDetailed(startTime_epoch, endTime_epoch, start, end));
@@ -92,7 +92,7 @@ function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch
                     resolve(db.AgentLoginDetailedCount(startTime_epoch, endTime_epoch, start, end));
                     break;
                 case 'InboundDetailedCount':
-                    resolve(db.InboundDetailedCount(startTime_epoch, endTime_epoch, start, end));
+                    resolve(db.InboundDetailedCount(startTime_epoch, endTime_epoch, start, end,keys));
                     break;
                 case 'OutCallDetailedCount':
                     resolve(db.OutCallDetailedCount(startTime_epoch, endTime_epoch, start, end));
@@ -243,16 +243,23 @@ class ReportController {
             let pagesize = ctx.request.query.pagesize;
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
+            let jdAgent =ctx.request.query.agentid;
+            let OrgId =ctx.request.query.orgid;
+            let CallUid =ctx.request.query.callid;
+
+            let keys={
+                "jdAgent":jdAgent,
+                "OrgId":OrgId,
+                "CallUid":CallUid
+            }
 
             startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = timestampToTime(endTime_epoch)
-
-
             let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-            let count = await selectTableCount('InboundDetailedCount', '', '', startTime_epoch, endTime_epoch, start, end);
-            let cs = await selectTable('InboundDetailed', '', '', startTime_epoch, endTime_epoch, start, end);
+            let count = await selectTableCount('InboundDetailedCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('InboundDetailed', keys, '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'total': count["0"].count,
                 'code': 0,
