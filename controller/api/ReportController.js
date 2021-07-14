@@ -8,6 +8,10 @@ function timestampToTime(timestamp) {
     return start;
 
 }
+
+function CallInfo(table,keys){
+
+}
 /**
  *
  * @param table 表
@@ -25,6 +29,9 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
             console.log("[CCReport].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table) {
+                case 'CallInfo':
+                    resolve(db.CallInfo(keys));
+                    break;
                 case 'cdr_table_a_leg' :
                     resolve(db.findDataByPage_IVR(table, keys, phoneName, startTime_epoch, endTime_epoch, start, end));
                     break;
@@ -278,6 +285,25 @@ class ReportController {
         ctx.body = body;
     }
 
+    async CallInfo(ctx) {
+        let body;
+        try {
+            let CallUid =ctx.request.query.callid;
+            let cs = await selectTable('CallInfo',CallUid);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
 
     /**
      * 外呼明细

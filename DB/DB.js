@@ -1,8 +1,8 @@
 const mysql = require("mysql")
-var moment = require('moment');
-var log = require("../controller/log4j/logger_Api");
+let moment = require('moment');
+let log = require("../controller/log4j/logger_Api");
 const config = require('../config/config.js').getConfig('database');
-
+let Helper = require("../controller/CCHelper");
 
 var pool = mysql.createPool({
     host: config.HOST,
@@ -44,6 +44,26 @@ let findDataById = function (table, id) {
     return query(_sql, [table, id, start, end])
 }
 
+let CallInfo =async function (keys){
+    let _sql = `select t1.uuid,t1.cid_num,t1.dest,t1.created,t1.created_epoch,t1.callstate,t3.agentname,t4.svcname
+ from channels t1
+LEFT JOIN members t2 ON t1.uuid=t2.session_uuid
+left join call_agent t3 ON t2.serving_agent=t3.AgentId
+LEFT JOIN call_ivrsvc t4 ON t2.queue = t4.SvcCode
+where t1.uuid=?`
+    let table=await query(_sql, [keys])
+    for (let i = 0; i < table.length; i++) {
+        let dest = table[i]["dest"];
+
+        if (dest != "") {
+            let AttriName=await Helper.GetAttribution(dest);
+            table[i].province = AttriName[0]["province"];
+            table[i].city = AttriName[0]["city"];
+        }
+    }
+
+    return table
+}
 
 //ivr未接= IVR放弃明细
 let findDataByPage_IVR = function (table, keys, phoneName, startTime_epoch, endTime_epoch, start, end) {
@@ -1337,4 +1357,5 @@ module.exports = {
     updateData,
     select,
     count,
+    CallInfo
 }

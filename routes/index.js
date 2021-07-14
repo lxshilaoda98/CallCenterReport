@@ -10,6 +10,8 @@ router
     .get('/detailed/IVRDetailed', Detailed.IVRDetailed)
     .get('/detailed/AgentLoginDetailed', Detailed.AgentLoginDetailed)
     .get('/detailed/InboundDetailed', Detailed.InboundDetailed)
+    .get('/detailed/CallInfo',Detailed.CallInfo)
+
     .get('/detailed/OutCallDetailed', Detailed.OutCallDetailed)
     .get('/detailed/AcdQueueDetailed', Detailed.AcdQueueDetailed)
     .get('/detailed/CallHanguDetailed', Detailed.CallHanguDetailed)
