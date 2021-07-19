@@ -13,7 +13,7 @@ var pool = mysql.createPool({
 });
 
 let query = function (sql, values) {
-    console.log("运行sql..>" + sql)
+
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
             if (err) {
@@ -595,16 +595,16 @@ let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, star
 let CallCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
     var groupByStr = await convertStr(SelectType, 'IvrStartTime');
     try {
-        let _sql = "select :convert as 日期,count(*) as 呼入量," +
-            "sum(QueueStartTime is not null) as 进入排队量," +
-            "sum(QueueStartTime is null) as 未转坐席放弃量," +
-            "sum(CCAgentAnsweredTime is not NULL) as 坐席应答量," +
-            "sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as 转坐席未答量," +
-            "sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) AS 3秒放弃数," +
-            "concat(round((sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) / sum(QueueStartTime is not null))*100,2),'%') AS 3秒放弃率," +
-            "concat(round((sum(CCAgentAnsweredTime is not NULL) / sum(QueueStartTime is not null))*100,2),'%') AS 排队接通率," +
-            "sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) as 通话时长（秒）," +
-            "round(sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均通话时长（秒） " +
+        let _sql = "select :convert as Time,count(*) as CallInNumber," +
+            "sum(QueueStartTime is not null) as QueueNumber," +
+            "sum(QueueStartTime is null) as NoTransferAgentNumber," +
+            "sum(CCAgentAnsweredTime is not NULL) as AgentAnsweredNumber," +
+            "sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as TransferNoAnswer," +
+            "sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) AS GiveUpIn3s," +
+            "concat(round((sum(CCancelReason ='BREAK_OUT' and TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)>3) / sum(QueueStartTime is not null))*100,2),'%') AS GiveUpIn3p," +
+            "concat(round((sum(CCAgentAnsweredTime is not NULL) / sum(QueueStartTime is not null))*100,2),'%') AS QueueAnswerP," +
+            "sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) as TalkTime," +
+            "round(sum(TIMESTAMPDIFF(SECOND,CCAgentCalledTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as AvgCallTime " +
             "from callstart where IvrStartTime BETWEEN ? and ? " +
             "GROUP BY :convert LIMIT ?,?";
 
@@ -620,13 +620,13 @@ let CallCountStatis = async function (startTime_epoch, endTime_epoch, start, end
             let newarr;
             //通过日期找关联的 <外呼数据>
             _sql = "select " +
-                "sum(1) as 外呼总量," +
-                "sum(case WHEN Billsec >0 THEN 1 else 0 end ) AS 外呼成功量," +
-                "sum(case WHEN Billsec =0 THEN 1 else 0 end ) AS 外呼失败量," +
-                "sum(case WHEN sip_hangup_disposition ='send_bye' THEN 1 else 0 end ) AS 客户挂机," +
-                "sum(case WHEN sip_hangup_disposition ='recv_bye' THEN 1 else 0 end ) AS 坐席挂机," +
-                "sum(Billsec) AS 通话时长," +
-                "round( (sum(Billsec) / sum(case WHEN Billsec >0 THEN 1 else 0 end) )) as 平均通话时长" +
+                "sum(1) as MakeCallNumber," +
+                "sum(case WHEN Billsec >0 THEN 1 else 0 end ) AS SuccessMakeCallNumber," +
+                "sum(case WHEN Billsec =0 THEN 1 else 0 end ) AS ErrMakeCallNumber," +
+                "sum(case WHEN sip_hangup_disposition ='send_bye' THEN 1 else 0 end ) AS CusHangUp," +
+                "sum(case WHEN sip_hangup_disposition ='recv_bye' THEN 1 else 0 end ) AS AgentHangup," +
+                "sum(Billsec) AS MakeCallBillsec," +
+                "round( (sum(Billsec) / sum(case WHEN Billsec >0 THEN 1 else 0 end) )) as MakeAvgCallTime" +
                 " from cdr_table_a_leg " +
                 `where last_app='bridge' and start_stamp BETWEEN ? and ? AND CONVERT(start_stamp, DATE) ='${moment(arr[i]["日期"]).format('YYYY-MM-DD')}'`;
             var groupByStr = await convertStr(SelectType, 'start_stamp');
@@ -685,10 +685,12 @@ let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start
 let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
 
     try {
-        let _sql = "SELECT AgentId as 坐席工号,:convert as time,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 登录总时长 " +
-            `from agent_login where CreateStartTime BETWEEN ? and ? group by AgentId,:convert LIMIT ?,?`;
+        let _sql = "SELECT t1.AgentId as 坐席工号,t2.AgentName,:convert as time,sum(TIMESTAMPDIFF(SECOND,t1.CreateStartTime,t1.CreateEndTime)) as 登录总时长 " +
+            `from agent_login as t1 
+             LEFT JOIN call_agent  as t2 ON t2.AgentId=t1.AgentId 
+             where t1.CreateStartTime BETWEEN ? and ? group by t1.AgentId,:convert LIMIT ?,?`;
 
-        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        var groupByStr = await convertStr(SelectType, 't1.CreateStartTime');
         _sql = _sql.replace(/:convert/g, groupByStr);
 
         let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
@@ -882,7 +884,7 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
 let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
 
     try {
-        let _sql = "select Org as 技能组,:convert as time,count(*) as 呼入电话数," +
+        let _sql = "select Org as 技能组Id,call_ivrsvc.SvcName as 技能组名称,:convert as time,count(*) as 呼入电话数," +
             "sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) as 等待时长, " +
             "round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) / sum(QueueStartTime is not null),0) as 平均等待时长," +
             "sum(QueueStartTime is null) as 未转坐席放弃量,sum(CCAgentAnsweredTime is not NULL) as 通话数量," +
@@ -895,7 +897,7 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
             "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 20 and 40 then 1 else 0 END) as 等待20到40秒的个数, " +
             "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 40 and 60 then 1 else 0 END) as 等待40到60秒的个数," +
             "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) > 60 then 1 else 0 END) as 等待大于60秒的个数 " +
-            "from callstart " +
+            "from callstart LEFT JOIN call_ivrsvc ON callstart.Org=call_ivrsvc.SvcCode " +
             "where Org is not null and QueueStartTime is not null " +
             "and IvrStartTime BETWEEN ? and ? " +
             "GROUP BY Org,:convert LIMIT ?,?";
@@ -910,7 +912,6 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
             //由于时间格式问题，所以新增一个字段
             arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
         }
-
         return arr;
 
     } catch (e) {
