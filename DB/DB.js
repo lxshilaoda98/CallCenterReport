@@ -145,7 +145,7 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
                 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
                 where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid
-                 AND t1.start_stamp BETWEEN ? and ? LIMIT ?,?`
+                 AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
         _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
     }else{
