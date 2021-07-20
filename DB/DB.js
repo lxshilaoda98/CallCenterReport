@@ -508,16 +508,24 @@ let Ivr_StatisCount = function (startTime_epoch, endTime_epoch, start, end, Sele
  * @returns {Promise.<*>}
  * @constructor
  */
-let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
     try {
-        let _sql = "select agents.name as 坐席名称," +
+        let _sql = "select call_agent.AgentName as 坐席名称," +
             "sum(org is not null) as 排队数," +
             "sum(CCAgentAnsweredTime is not null) as 应答数," +
             "sum(CCancelReason = 'BREAK_OUT') as 放弃数 " +
             "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
-            "where callstart.IvrStartTime BETWEEN ? and ? " +
+            "left join call_agent on agents.name = call_agent.AgentId where callstart.IvrStartTime BETWEEN ? and ? " +
             "group by agents.name LIMIT ?,?";
-        console.log('startTime_epoch..>' + startTime_epoch + "..>endTime_epoch..>" + endTime_epoch);
+        if (keys!="" && keys!=undefined){
+            _sql = "select call_agent.AgentName as 坐席名称," +
+                "sum(org is not null) as 排队数," +
+                "sum(CCAgentAnsweredTime is not null) as 应答数," +
+                "sum(CCancelReason = 'BREAK_OUT') as 放弃数 " +
+                "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
+                `left join call_agent on agents.name = call_agent.AgentId where agents.name = '${keys}' and callstart.IvrStartTime  BETWEEN ? and ? ` +
+                "group by agents.name LIMIT ?,?";
+        }
 
         let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
 
@@ -565,14 +573,20 @@ let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, en
     }
 
 }
-let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
+
     try {
         let _sql = "select count(*) as count from(select agents.name as 坐席名称 " +
             "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
             "where callstart.IvrStartTime BETWEEN ? and ? " +
             "group by agents.name ) t1";
-
-        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        if (keys!="" && keys!=undefined){
+            _sql = "select count(*) as count from(select agents.name as 坐席名称 " +
+                "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
+                "where callstart.IvrStartTime BETWEEN ? and ? and agents.name = ? " +
+                "group by agents.name ) t1";
+        }
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, keys]);
 
         return arr;
 
