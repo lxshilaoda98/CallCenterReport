@@ -25,7 +25,7 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                     resolve(db.AgentCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
                 case 'OrgCountStatis' :
-                    resolve(db.OrgCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    resolve(db.OrgCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType, keys));
                     break;
                 case 'OutCallStatis' :
                     resolve(db.OutCallStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
@@ -76,7 +76,7 @@ function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch
                     resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
                 case 'OrgCountStatisCount' :
-                    resolve(db.OrgCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    resolve(db.OrgCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType, keys));
                     break;
                 case 'OutCallStatisCount' :
                     resolve(db.OutCallStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
@@ -296,8 +296,14 @@ class StatisticsReport {
             let pagesize = ctx.request.query.pagesize;
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
-
             let SelectType = ctx.request.query.type;
+            let groupId = ctx.request.query.groupId;
+
+            let gg = "";
+            if (groupId != "" && groupId != undefined) {
+                gg = groupId.split(',');
+            }
+            let keys = {"org": gg}
 
             startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
@@ -306,8 +312,9 @@ class StatisticsReport {
             let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-            let count = await selectTableCount('OrgCountStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
-            let cs = await selectTable('OrgCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let count = await selectTableCount('OrgCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let cs = await selectTable('OrgCountStatis', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+
             body = {
                 'total': count["0"].count,
                 'code': 0,

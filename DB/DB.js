@@ -144,23 +144,56 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
                 left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
                 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-                where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid
+                where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid #callerNumber #calleeNumber #answerStatus #callType 
                  AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
         _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
     }else{
         _sql=_sql.replace("#jdAgent","");
     }
-    if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
-        _sql=_sql.replace("#OrgId",`and t5.Org in (${keys["OrgId"]})`);
-    }else {
-        _sql=_sql.replace("#OrgId","");
+    if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
+        _sql = _sql.replace("#OrgId", `and t5.Org in (${keys["OrgId"]})`);
+    } else {
+        _sql = _sql.replace("#OrgId", "");
     }
-    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
-        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
-    }else{
-        _sql=_sql.replace("#CallUid","");
+    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
+        _sql = _sql.replace("#CallUid", `and  t1.uuid = '${keys["CallUid"]}'`);
+    } else {
+        _sql = _sql.replace("#CallUid", "");
     }
+    if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
+        _sql = _sql.replace("#callerNumber", `and  t1.caller_id_number = '${keys["callerNumber"]}'`);
+    } else {
+        _sql = _sql.replace("#callerNumber", "");
+    }
+    if (keys["calleeNumber"] != "" && keys["calleeNumber"] != undefined) {
+        _sql = _sql.replace("#calleeNumber", `and  t1.destination_number = '${keys["calleeNumber"]}'`);
+    } else {
+        _sql = _sql.replace("#calleeNumber", "");
+    }
+    if (keys["answerStatus"] != "" && keys["answerStatus"] != undefined) {
+        if (keys["answerStatus"] == "接听") {
+            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch !=0`);
+        } else if (keys["answerStatus"] == "未接听") {
+            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch =0`);
+        } else {
+            _sql = _sql.replace("#answerStatus", "");
+        }
+    } else {
+        _sql = _sql.replace("#answerStatus", "");
+    }
+    if (keys["callType"] != "" && keys["callType"] != undefined) {
+        if (keys["callType"] == "呼入") {
+            _sql = _sql.replace("#callType", `and t1.last_app = 'callcenter'`);
+        } else if (keys["callType"] == "呼出") {
+            _sql = _sql.replace("#callType", `and t1.last_app = 'bridge'`);
+        } else {
+            _sql = _sql.replace("#callType", "");
+        }
+    } else {
+        _sql = _sql.replace("#callType", "");
+    }
+
     let table = await query(_sql, [startTime_epoch, endTime_epoch, start, end])
 
     //添加元素
@@ -968,7 +1001,7 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
  * @returns {Promise.<*>}
  * @constructor
  */
-let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
         let _sql = "select Org as 技能组Id,call_ivrsvc.SvcName as 技能组名称,:convert as time,count(*) as 呼入电话数," +
@@ -986,13 +1019,22 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
             "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) > 60 then 1 else 0 END) as 等待大于60秒的个数 " +
             "from callstart LEFT JOIN call_ivrsvc ON callstart.Org=call_ivrsvc.SvcCode " +
             "where Org is not null and QueueStartTime is not null " +
-            "and IvrStartTime BETWEEN ? and ? " +
+            "and IvrStartTime BETWEEN ? and ? :orgOid " +
             "GROUP BY Org,:convert LIMIT ?,?";
 
-        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        let arr;
+        let groupByStr = await convertStr(SelectType, 'IvrStartTime');
         _sql = _sql.replace(/:convert/g, groupByStr);
 
-        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        if (keys["org"] != "") {
+            _sql = _sql.replace(/:orgOid/g, 'and Org in (?)');
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["org"], start, end]);
+        } else {
+            _sql = _sql.replace(/:orgOid/g, '');
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        }
+
+
         let forCount = arr.length;
 
         for (var i = 0; i < forCount; i++) {
@@ -1005,19 +1047,23 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
         return e.message;
     }
 }
-let OrgCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let OrgCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
         let _sql = "select count(*) as count from (select Org as 技能组,:convert as time " +
             "from callstart " +
             "where Org is not null and QueueStartTime is not null " +
-            "and IvrStartTime BETWEEN ? and ? " +
+            "and IvrStartTime BETWEEN ? and ? :orgOid" +
             "GROUP BY Org,:convert ) as t1";
-
-        var groupByStr = await convertStr(SelectType, 'IvrStartTime');
+        let groupByStr = await convertStr(SelectType, 'IvrStartTime');
         _sql = _sql.replace(/:convert/g, groupByStr);
+        if (keys["org"] != "") {
+            _sql = _sql.replace(/:orgOid/g, 'and Org in (?)');
+        } else {
+            _sql = _sql.replace(/:orgOid/g, '');
+        }
 
-        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        let arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["org"]]);
 
 
         return arr;
