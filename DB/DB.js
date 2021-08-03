@@ -214,7 +214,7 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
 let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,keys) {
 
     let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
-        "where bleg_uuid is not null #jdAgent #OrgId #CallUid and start_stamp BETWEEN ? and ? "
+        "where bleg_uuid is not null #jdAgent #OrgId #CallUid #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
 
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
         _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
@@ -231,6 +231,39 @@ let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,
     }else{
         _sql=_sql.replace("#CallUid","");
     }
+    if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
+        _sql = _sql.replace("#callerNumber", `and  t1.caller_id_number = '${keys["callerNumber"]}'`);
+    } else {
+        _sql = _sql.replace("#callerNumber", "");
+    }
+    if (keys["calleeNumber"] != "" && keys["calleeNumber"] != undefined) {
+        _sql = _sql.replace("#calleeNumber", `and  t1.destination_number = '${keys["calleeNumber"]}'`);
+    } else {
+        _sql = _sql.replace("#calleeNumber", "");
+    }
+    if (keys["answerStatus"] != "" && keys["answerStatus"] != undefined) {
+        if (keys["answerStatus"] == "接听") {
+            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch !=0`);
+        } else if (keys["answerStatus"] == "未接听") {
+            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch =0`);
+        } else {
+            _sql = _sql.replace("#answerStatus", "");
+        }
+    } else {
+        _sql = _sql.replace("#answerStatus", "");
+    }
+    if (keys["callType"] != "" && keys["callType"] != undefined) {
+        if (keys["callType"] == "呼入") {
+            _sql = _sql.replace("#callType", `and t1.last_app = 'callcenter'`);
+        } else if (keys["callType"] == "呼出") {
+            _sql = _sql.replace("#callType", `and t1.last_app = 'bridge'`);
+        } else {
+            _sql = _sql.replace("#callType", "");
+        }
+    } else {
+        _sql = _sql.replace("#callType", "");
+    }
+
     return query(_sql, [startTime_epoch, endTime_epoch, start, end])
 }
 
@@ -802,19 +835,24 @@ let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start
  * @returns {Promise.<*>}
  * @constructor
  */
-let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
 
     try {
         let _sql = "SELECT t1.AgentId as 坐席工号,t2.AgentName,:convert as time,sum(TIMESTAMPDIFF(SECOND,t1.CreateStartTime,t1.CreateEndTime)) as 登录总时长 " +
             `from agent_login as t1 
              LEFT JOIN call_agent  as t2 ON t2.AgentId=t1.AgentId 
-             where t1.CreateStartTime BETWEEN ? and ? group by t1.AgentId,:convert LIMIT ?,?`;
+             where t1.CreateStartTime BETWEEN ? and ? #agentId group by t1.AgentId,:convert LIMIT ?,?`;
 
-        var groupByStr = await convertStr(SelectType, 't1.CreateStartTime');
-        _sql = _sql.replace(/:convert/g, groupByStr);
-
-        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
-
+        let groupByStrOne = await convertStr(SelectType, 't1.CreateStartTime');
+        _sql = _sql.replace(/:convert/g, groupByStrOne);
+        let arr;
+        if(keys["agentId"]!=""){
+            _sql = _sql.replace('#agentId', 'and t1.AgentId = ?');
+            arr= await query(_sql, [startTime_epoch, endTime_epoch,keys["agentId"], start, end]);
+        }else{
+            _sql = _sql.replace('#agentId', '');
+            arr= await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        }
         let forCount = arr.length;
 
         for (var i = 0; i < forCount; i++) {
@@ -973,17 +1011,22 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
         return e.message;
     }
 }
-let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType) {
+let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
 
     try {
         let _sql = "select count(*) as count from (SELECT AgentId as 坐席工号,:convert as time " +
-            `from agent_login where CreateStartTime BETWEEN ? and ? group by AgentId,:convert) as t1`;
+            `from agent_login where CreateStartTime BETWEEN ? and ? #agentId group by AgentId,:convert) as t1`;
 
-        var groupByStr = await convertStr(SelectType, 'CreateStartTime');
+        let groupByStr = await convertStr(SelectType, 'CreateStartTime');
         _sql = _sql.replace(/:convert/g, groupByStr);
-
-        let arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
-
+        let arr;
+        if(keys["agentId"]!=""){
+            _sql = _sql.replace('#agentId', 'and AgentId = ?');
+            arr= await query(_sql, [startTime_epoch, endTime_epoch,keys["agentId"], start, end]);
+        }else{
+            _sql = _sql.replace('#agentId', '');
+            arr= await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+        }
         return arr;
 
     } catch (e) {

@@ -256,9 +256,9 @@ class ReportController {
             let pagesize = ctx.request.query.pagesize;
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
-            let jdAgent = ctx.request.query.agentid;
-            let OrgId = ctx.request.query.orgid;
-            let CallUid = ctx.request.query.callid;
+            let jdAgent = ctx.request.query.agentId;
+            let OrgId = ctx.request.query.orgId;
+            let CallUid = ctx.request.query.callId;
 
             let ani = ctx.request.query.callerNumber;
             let dst = ctx.request.query.calleeNumber;

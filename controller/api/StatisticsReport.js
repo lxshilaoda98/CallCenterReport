@@ -22,7 +22,7 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
                     resolve(db.CallCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
                 case 'AgentCountStatis' :
-                    resolve(db.AgentCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    resolve(db.AgentCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType,keys));
                     break;
                 case 'OrgCountStatis' :
                     resolve(db.OrgCountStatis(startTime_epoch, endTime_epoch, start, end, SelectType, keys));
@@ -73,7 +73,7 @@ function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch
                     resolve(db.CallCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
                 case 'AgentCountStatisCount' :
-                    resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType,keys));
                     break;
                 case 'OrgCountStatisCount' :
                     resolve(db.OrgCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType, keys));
@@ -253,8 +253,13 @@ class StatisticsReport {
             let pagesize = ctx.request.query.pagesize;
             let startTime_epoch = ctx.request.query.sTime_epoch;
             let endTime_epoch = ctx.request.query.eTime_epoch;
-
             let SelectType = ctx.request.query.type;
+            let AgentId = ctx.request.query.agentId;
+            let gg = "";
+            if (AgentId != "" && AgentId != undefined) {
+                gg = AgentId.split(',');
+            }
+            let keys = {"agentId": gg}
 
             startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
@@ -263,8 +268,8 @@ class StatisticsReport {
             let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-            let count = await selectTableCount('AgentCountStatisCount', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
-            let cs = await selectTable('AgentCountStatis', '', '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let count = await selectTableCount('AgentCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let cs = await selectTable('AgentCountStatis', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
             body = {
                 'total': count["0"].count,
                 'code': 0,
