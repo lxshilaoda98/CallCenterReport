@@ -304,7 +304,7 @@ class StatisticsReport {
             let SelectType = ctx.request.query.type;
             let groupId = ctx.request.query.groupId;
 
-            let gg = "";
+            let gg;
             if (groupId != "" && groupId != undefined) {
                 gg = groupId.split(',');
             }

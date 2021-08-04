@@ -259,6 +259,19 @@ class ReportController {
             let jdAgent = ctx.request.query.agentId;
             let OrgId = ctx.request.query.orgId;
             let CallUid = ctx.request.query.callId;
+            let gg1;
+            if (jdAgent != "" && jdAgent != undefined) {
+                gg1 = jdAgent.split(',');
+            }
+            let gg2;
+            if (OrgId != "" && OrgId != undefined) {
+                gg2 = OrgId.split(',');
+            }
+            let gg3;
+            if (CallUid != "" && CallUid != undefined) {
+                gg3 = CallUid.split(',');
+            }
+
 
             let ani = ctx.request.query.callerNumber;
             let dst = ctx.request.query.calleeNumber;
@@ -266,17 +279,16 @@ class ReportController {
             let call_type = ctx.request.query.callType;
 
             let keys = {
-                "jdAgent": jdAgent,
-                "OrgId": OrgId,
-                "CallUid": CallUid,
+                "jdAgent": gg1,
+                "OrgId": gg2,
+                "CallUid": gg3,
                 "callerNumber": ani,
                 "calleeNumber": dst,
                 "answerStatus": answer_status,
                 "callType": call_type,
             }
-
             let count;
-            let cs
+            let cs;
             if (CallUid!=undefined && CallUid!=""){
                 count = await selectTableCount('InboundDetailedCountForUUid',keys);
                 cs = await selectTable('InboundDetailedForUUid', keys);
@@ -287,6 +299,7 @@ class ReportController {
                 let end = pagesize * 1; //每页显示
 
                 count = await selectTableCount('InboundDetailedCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+
                 cs = await selectTable('InboundDetailed', keys, '', startTime_epoch, endTime_epoch, start, end);
             }
 

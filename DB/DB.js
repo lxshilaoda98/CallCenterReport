@@ -119,6 +119,7 @@ let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, e
 
 let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end,keys) {
 
+    let params=[startTime_epoch, endTime_epoch, start, end];
     let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
                 t1.billsec,t3.answer_stamp as calleering_stamp,
                 case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
@@ -144,23 +145,21 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
                 left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
                 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-                where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid #callerNumber #calleeNumber #answerStatus #callType 
+                where t1.bleg_uuid is not null #jdAgent #OrgId #callerNumber #calleeNumber #answerStatus #callType 
                  AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
-        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
+        params=[keys["jdAgent"],startTime_epoch, endTime_epoch, start, end]
+        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (?)`);
     }else{
         _sql=_sql.replace("#jdAgent","");
     }
     if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
-        _sql = _sql.replace("#OrgId", `and t5.Org in (${keys["OrgId"]})`);
+        params=[keys["OrgId"],startTime_epoch, endTime_epoch, start, end]
+        _sql = _sql.replace("#OrgId", `and t5.Org in (?)`);
     } else {
         _sql = _sql.replace("#OrgId", "");
     }
-    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
-        _sql = _sql.replace("#CallUid", `and  t1.uuid = '${keys["CallUid"]}'`);
-    } else {
-        _sql = _sql.replace("#CallUid", "");
-    }
+
     if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
         _sql = _sql.replace("#callerNumber", `and  t1.caller_id_number = '${keys["callerNumber"]}'`);
     } else {
@@ -194,7 +193,7 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
         _sql = _sql.replace("#callType", "");
     }
 
-    let table = await query(_sql, [startTime_epoch, endTime_epoch, start, end])
+    let table = await query(_sql, params)
 
     //添加元素
     //如果是呼入电话的话，计算必要元素
@@ -212,25 +211,23 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     return table
 }
 let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,keys) {
-
+    let params=[startTime_epoch, endTime_epoch]
     let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
-        "where bleg_uuid is not null #jdAgent #OrgId #CallUid #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
+        "where bleg_uuid is not null #jdAgent #OrgId   #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
 
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
-        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
+        params=[keys["jdAgent"],startTime_epoch, endTime_epoch]
+        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (?)`);
     }else{
         _sql=_sql.replace("#jdAgent","");
     }
     if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
-        _sql=_sql.replace("#OrgId",`and t5.Org in (${keys["OrgId"]})`);
+        params=[keys["OrgId"],startTime_epoch, endTime_epoch]
+        _sql=_sql.replace("#OrgId",`and t5.Org in (?)`);
     }else {
         _sql=_sql.replace("#OrgId","");
     }
-    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
-        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
-    }else{
-        _sql=_sql.replace("#CallUid","");
-    }
+
     if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
         _sql = _sql.replace("#callerNumber", `and  t1.caller_id_number = '${keys["callerNumber"]}'`);
     } else {
@@ -263,8 +260,7 @@ let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,
     } else {
         _sql = _sql.replace("#callType", "");
     }
-
-    return query(_sql, [startTime_epoch, endTime_epoch, start, end])
+    return query(_sql, params)
 }
 
 
@@ -306,17 +302,8 @@ let InboundDetailedForUUid= async function (keys) {
                 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
                 left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
                 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-                where t1.bleg_uuid is not null #jdAgent #OrgId #CallUid `
-    if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
-        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (${keys["jdAgent"]})`);
-    }else{
-        _sql=_sql.replace("#jdAgent","");
-    }
-    if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
-        _sql=_sql.replace("#OrgId",`and t5.Org in (${keys["OrgId"]})`);
-    }else {
-        _sql=_sql.replace("#OrgId","");
-    }
+                where t1.bleg_uuid is not null #CallUid `
+
     if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
         _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
     }else{
