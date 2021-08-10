@@ -46,22 +46,20 @@ let findDataById = function (table, id) {
 
 let CallInfo =async function (keys){
     let _sql = `select t1.uuid,t1.cid_num,t1.dest,t1.created,t1.created_epoch,t1.callstate,t3.agentname,t4.svcname
- from channels t1
-LEFT JOIN members t2 ON t1.uuid=t2.session_uuid
-left join call_agent t3 ON t2.serving_agent=t3.AgentId
-LEFT JOIN call_ivrsvc t4 ON t2.queue = t4.SvcCode
-where t1.uuid=?`
+                 from channels t1
+                LEFT JOIN members t2 ON t1.uuid=t2.session_uuid
+                left join call_agent t3 ON t2.serving_agent=t3.AgentId
+                LEFT JOIN call_ivrsvc t4 ON t2.queue = t4.SvcCode
+                where t1.uuid=?`
     let table=await query(_sql, [keys])
     for (let i = 0; i < table.length; i++) {
         let dest = table[i]["dest"];
-
         if (dest != "") {
             let AttriName=await Helper.GetAttribution(dest);
             table[i].province = AttriName[0]["province"];
             table[i].city = AttriName[0]["city"];
         }
     }
-
     return table
 }
 
@@ -149,15 +147,18 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                  AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
         params=[keys["jdAgent"],startTime_epoch, endTime_epoch, start, end]
-        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (?)`);
+        _sql=_sql.replace("#jdAgent",'and t5.CCAgent in (?)');
     }else{
         _sql=_sql.replace("#jdAgent","");
     }
     if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
         params=[keys["OrgId"],startTime_epoch, endTime_epoch, start, end]
-        _sql = _sql.replace("#OrgId", `and t5.Org in (?)`);
+        _sql = _sql.replace("#OrgId", 'and t5.Org in (?)');
     } else {
         _sql = _sql.replace("#OrgId", "");
+    }
+    if ((keys["jdAgent"]!="" && keys["jdAgent"]!=undefined) && (keys["OrgId"]!="" && keys["OrgId"]!=undefined)){
+        params=[keys["jdAgent"],keys["OrgId"],startTime_epoch, endTime_epoch, start, end]
     }
 
     if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
@@ -192,7 +193,6 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     } else {
         _sql = _sql.replace("#callType", "");
     }
-
     let table = await query(_sql, params)
 
     //添加元素
@@ -213,19 +213,22 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
 let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,keys) {
     let params=[startTime_epoch, endTime_epoch]
     let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
-        "where bleg_uuid is not null #jdAgent #OrgId   #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
+        "where bleg_uuid is not null #jdAgent #OrgId  #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
 
     if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
         params=[keys["jdAgent"],startTime_epoch, endTime_epoch]
-        _sql=_sql.replace("#jdAgent",`and t5.CCAgent in (?)`);
+        _sql=_sql.replace("#jdAgent",'and t5.CCAgent in (?)');
     }else{
         _sql=_sql.replace("#jdAgent","");
     }
     if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
         params=[keys["OrgId"],startTime_epoch, endTime_epoch]
-        _sql=_sql.replace("#OrgId",`and t5.Org in (?)`);
+        _sql=_sql.replace("#OrgId",'and t5.Org in (?)');
     }else {
         _sql=_sql.replace("#OrgId","");
+    }
+    if ((keys["jdAgent"]!="" && keys["jdAgent"]!=undefined) && (keys["OrgId"]!="" && keys["OrgId"]!=undefined)){
+        params=[keys["jdAgent"],keys["OrgId"],startTime_epoch, endTime_epoch]
     }
 
     if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
@@ -260,6 +263,7 @@ let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,
     } else {
         _sql = _sql.replace("#callType", "");
     }
+
     return query(_sql, params)
 }
 
