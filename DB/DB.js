@@ -45,19 +45,22 @@ let findDataById = function (table, id) {
 }
 
 let CallInfo =async function (keys){
-    let _sql = `select t1.uuid,t1.cid_num,t1.dest,t1.created,t1.created_epoch,t1.callstate,t3.agentname,t4.svcname
+    let _sql = `select t1.application,t1.uuid,t1.cid_num,t1.dest,t1.created,t1.created_epoch,t1.callstate,t3.agentname,t4.svcname
                  from channels t1
                 LEFT JOIN members t2 ON t1.uuid=t2.session_uuid
                 left join call_agent t3 ON t2.serving_agent=t3.AgentId
                 LEFT JOIN call_ivrsvc t4 ON t2.queue = t4.SvcCode
                 where t1.uuid=?`
-    let table=await query(_sql, [keys])
-    for (let i = 0; i < table.length; i++) {
-        let dest = table[i]["dest"];
-        if (dest != "") {
-            let AttriName=await Helper.GetAttribution(dest);
-            table[i].province = AttriName[0]["province"];
-            table[i].city = AttriName[0]["city"];
+    let table = await query(_sql, [keys])
+    if (table.length > 0) {
+        let dest = table[0]["dest"];
+        if (table[0]["application"] == "callcenter") {
+            dest = table[0]["cid_num"];
+            if (dest != "") {
+                let AttriName = await Helper.GetAttribution(dest);
+                table[0].province = AttriName[0]["province"];
+                table[0].city = AttriName[0]["city"];
+            }
         }
     }
     return table
