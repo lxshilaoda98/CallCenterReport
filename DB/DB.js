@@ -44,18 +44,18 @@ let findDataById = function (table, id) {
     return query(_sql, [table, id, start, end])
 }
 
-let CallInfo =async function (keys){
+let CallInfo = async function (keys) {
     let _sql = `select t1.uuid,t1.cid_num,t1.dest,t1.created,t1.created_epoch,t1.callstate,t3.agentname,t4.svcname
                  from channels t1
                 LEFT JOIN members t2 ON t1.uuid=t2.session_uuid
                 left join call_agent t3 ON t2.serving_agent=t3.AgentId
                 LEFT JOIN call_ivrsvc t4 ON t2.queue = t4.SvcCode
                 where t1.uuid=?`
-    let table=await query(_sql, [keys])
+    let table = await query(_sql, [keys])
     for (let i = 0; i < table.length; i++) {
         let dest = table[i]["dest"];
         if (dest != "") {
-            let AttriName=await Helper.GetAttribution(dest);
+            let AttriName = await Helper.GetAttribution(dest);
             table[i].province = AttriName[0]["province"];
             table[i].city = AttriName[0]["city"];
         }
@@ -115,9 +115,92 @@ let AgentLoginDetailedCount = function (startTime_epoch, endTime_epoch, start, e
 }
 
 
-let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end,keys) {
+let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end, keys) {
 
-    let params=[startTime_epoch, endTime_epoch, start, end];
+    let params = [startTime_epoch, endTime_epoch, start, end];
+    let out_sql = `SELECT
+                t2.ChannelUUid AS uuid,
+                t3.AgentName AS agentname,
+                t2.CallerNumber AS caller_id_number,
+                t2.CalleeNumber AS destination_number,
+                t2.TPAnswerTime AS start_stamp,
+                t2.CalleeAnswerTime AS CalleeAnswerTime,
+                t2.CallHangupTime AS end_stamp,
+                t2.TalkTime AS billsec,
+                '呼出' AS call_type,
+                CASE
+                WHEN t2.CalleeAnswerTime IS NULL THEN
+                '未接听'
+                ELSE
+                '接听'
+                END AS answer_status,
+                 CASE t2.Hangup_Dst
+                WHEN 'send_bye' THEN
+                '被叫挂机'
+                WHEN 'recv_cancel' THEN
+                '接受取消'
+                WHEN 'send_refuse' THEN
+                '呼叫拒绝'
+                WHEN 'recv_bye' THEN
+                '主叫挂机'
+                WHEN 'send_cancel' THEN
+                '呼叫取消'
+                ELSE
+                t2.Hangup_Dst
+                END AS hangup_case,
+                 CASE t4.nLevel
+                WHEN t4.nLevel IS NOT NULL THEN
+                t4.nLevelName
+                ELSE
+                '未评价'
+                END AS nlevelname,
+                 t5.ringnum,
+                 t5.file
+                FROM
+                agents AS t1
+                LEFT JOIN call_makecall t2 ON t1.\`name\` = t2.CCAgent
+                LEFT JOIN call_agent t3 ON t1. NAME = t3.agentid
+                LEFT JOIN agentservicelevel t4 ON t2.ChannelUUid = t4.uuid
+                LEFT JOIN recordlog t5 ON t2.ChannelUUid = t5.uuid
+                WHERE 1=1 #jdAgent #callerNumber #calleeNumber AND t2.TPAnswerTime BETWEEN ? and ? LIMIT ?,? `
+    if (keys["jdAgent"] != "" && keys["jdAgent"] != undefined) {
+        params = [keys["jdAgent"], startTime_epoch, endTime_epoch, start, end]
+        out_sql = out_sql.replace("#jdAgent", 'and t1.NAME in (?)');
+    } else {
+        out_sql = out_sql.replace("#jdAgent", "");
+    }
+    if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
+        out_sql = out_sql.replace("#callerNumber", `and  t2.CallerNumber = '${keys["callerNumber"]}'`);
+    } else {
+        out_sql = out_sql.replace("#callerNumber", "");
+    }
+    if (keys["calleeNumber"] != "" && keys["calleeNumber"] != undefined) {
+        out_sql = out_sql.replace("#calleeNumber", `and  t2.CalleeNumber = '${keys["calleeNumber"]}'`);
+    } else {
+        out_sql = out_sql.replace("#calleeNumber", "");
+    }
+
+    let in_sql=`SELECT  t2.ChannelCallUUID as uuid,t3.AgentName as agentname,t6.SvcName as svcname,t2.CallerANI as caller_id_number,t2.CallerDestinationNumber as destination_number,
+                t2.IvrStartTime as start_stamp,t2.CallEndTime as end_stamp,
+                TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) billsec,
+                
+                t2.CCAgent as ccagent,t2.IvrStartTime as ivrstarttime,t2.QueueStartTime as queuestarttime, t2.QueueEndTime as queueendtime,t2.CCOfferingTime as ccofferringtime,
+                t2.CCAgentCalledTime as ccagentcalledtime,t2.CCAgentAnsweredTime as ccagentansweredtime,t2.CCHangupCauseTime as cchangupcausetime,t2.CCBridgeTerminatedTime as ccbridgeterminatedtime,
+                TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.QueueEndTime) queue_times,
+                TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) ring_times,
+                (CASE WHEN t2.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCAgentAnsweredTime)
+                WHEN t2.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCHangupCauseTime)
+                WHEN t2.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.QueueEndTime)ELSE 0 END) AS wait_times,
+                case t4.nLevel WHEN t4.nLevel is not NULL THEN t4.nLevelName else '未评价' END as nlevelname,t5.ringnum,t5.file
+                from agents t1
+                LEFT JOIN callstart t2 ON t1.\`name\` = t2.CCAgent
+                LEFT JOIN call_agent t3 ON t1. NAME = t3.agentid
+                LEFT JOIN agentservicelevel t4 ON t2.ChannelCallUUID = t4.uuid
+                LEFT JOIN recordlog t5 ON t2.ChannelCallUUID = t5.uuid
+                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 `
+
+
+    //不用 start
     let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
                 t1.billsec,t3.answer_stamp as calleering_stamp,
                 case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
@@ -145,32 +228,16 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
                 where t1.bleg_uuid is not null #jdAgent #OrgId #callerNumber #calleeNumber #answerStatus #callType 
                  AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
-    if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
-        params=[keys["jdAgent"],startTime_epoch, endTime_epoch, start, end]
-        _sql=_sql.replace("#jdAgent",'and t5.CCAgent in (?)');
-    }else{
-        _sql=_sql.replace("#jdAgent","");
-    }
     if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
-        params=[keys["OrgId"],startTime_epoch, endTime_epoch, start, end]
+        params = [keys["OrgId"], startTime_epoch, endTime_epoch, start, end]
         _sql = _sql.replace("#OrgId", 'and t5.Org in (?)');
     } else {
         _sql = _sql.replace("#OrgId", "");
     }
-    if ((keys["jdAgent"]!="" && keys["jdAgent"]!=undefined) && (keys["OrgId"]!="" && keys["OrgId"]!=undefined)){
-        params=[keys["jdAgent"],keys["OrgId"],startTime_epoch, endTime_epoch, start, end]
+    if ((keys["jdAgent"] != "" && keys["jdAgent"] != undefined) && (keys["OrgId"] != "" && keys["OrgId"] != undefined)) {
+        params = [keys["jdAgent"], keys["OrgId"], startTime_epoch, endTime_epoch, start, end]
     }
 
-    if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
-        _sql = _sql.replace("#callerNumber", `and  t1.caller_id_number = '${keys["callerNumber"]}'`);
-    } else {
-        _sql = _sql.replace("#callerNumber", "");
-    }
-    if (keys["calleeNumber"] != "" && keys["calleeNumber"] != undefined) {
-        _sql = _sql.replace("#calleeNumber", `and  t1.destination_number = '${keys["calleeNumber"]}'`);
-    } else {
-        _sql = _sql.replace("#calleeNumber", "");
-    }
     if (keys["answerStatus"] != "" && keys["answerStatus"] != undefined) {
         if (keys["answerStatus"] == "接听") {
             _sql = _sql.replace("#answerStatus", `and t1.answer_epoch !=0`);
@@ -193,7 +260,17 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     } else {
         _sql = _sql.replace("#callType", "");
     }
-    let table = await query(_sql, params)
+    //不用 end
+
+    //console.log("out--sql>" + out_sql)
+    //呼出
+    let table = await query(out_sql, params)
+
+    //呼入
+    let inTable = await query(out_sql, params)
+
+    //let c=table.concat(inTable); //可能存在资源浪费
+    table.push(...inTable);
 
     //添加元素
     //如果是呼入电话的话，计算必要元素
@@ -210,25 +287,24 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
 
     return table
 }
-let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,keys) {
-    let params=[startTime_epoch, endTime_epoch]
-    let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
-        "where bleg_uuid is not null #jdAgent #OrgId  #callerNumber #calleeNumber #answerStatus #callType and start_stamp BETWEEN ? and ? "
+let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end, keys) {
+    let params = [startTime_epoch, endTime_epoch]
+    let _sql = "select count(*) from call_makecall where 1=1 "
 
-    if (keys["jdAgent"]!="" && keys["jdAgent"]!=undefined){
-        params=[keys["jdAgent"],startTime_epoch, endTime_epoch]
-        _sql=_sql.replace("#jdAgent",'and t5.CCAgent in (?)');
-    }else{
-        _sql=_sql.replace("#jdAgent","");
+    if (keys["jdAgent"] != "" && keys["jdAgent"] != undefined) {
+        params = [keys["jdAgent"], startTime_epoch, endTime_epoch]
+        _sql = _sql.replace("#jdAgent", 'and t5.CCAgent in (?)');
+    } else {
+        _sql = _sql.replace("#jdAgent", "");
     }
-    if (keys["OrgId"]!="" && keys["OrgId"]!=undefined){
-        params=[keys["OrgId"],startTime_epoch, endTime_epoch]
-        _sql=_sql.replace("#OrgId",'and t5.Org in (?)');
-    }else {
-        _sql=_sql.replace("#OrgId","");
+    if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
+        params = [keys["OrgId"], startTime_epoch, endTime_epoch]
+        _sql = _sql.replace("#OrgId", 'and t5.Org in (?)');
+    } else {
+        _sql = _sql.replace("#OrgId", "");
     }
-    if ((keys["jdAgent"]!="" && keys["jdAgent"]!=undefined) && (keys["OrgId"]!="" && keys["OrgId"]!=undefined)){
-        params=[keys["jdAgent"],keys["OrgId"],startTime_epoch, endTime_epoch]
+    if ((keys["jdAgent"] != "" && keys["jdAgent"] != undefined) && (keys["OrgId"] != "" && keys["OrgId"] != undefined)) {
+        params = [keys["jdAgent"], keys["OrgId"], startTime_epoch, endTime_epoch]
     }
 
     if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
@@ -268,50 +344,68 @@ let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,
 }
 
 
-let InboundDetailedCountForUUid=function (keys){
-    let _sql = "SELECT count(*) as count from cdr_table_a_leg t1 left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid " +
-        "where bleg_uuid is not null #CallUid "
+let InboundDetailedCountForUUid = function (keys) {
+    let _sql = `SELECT count(*) as count from call_makecall  where #CallUid`
 
-    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
-        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
-    }else{
-        _sql=_sql.replace("#CallUid","");
+    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
+        _sql = _sql.replace("#CallUid", ` ChannelUUid = '${keys["CallUid"]}'`);
+    } else {
+        _sql = _sql.replace("#CallUid", "");
     }
     return query(_sql, [])
 }
-let InboundDetailedForUUid= async function (keys) {
+let InboundDetailedForUUid = async function (keys) {
 
-    let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
-                t1.billsec,t3.answer_stamp as calleering_stamp,
-                case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
-                case when t1.answer_epoch =0 THEN '未接听' else '接听' END as answer_status,
-                case  t1.sip_hangup_disposition WHEN 'send_bye' THEN '被叫挂机'  
-                WHEN 'recv_cancel' then '接受取消' 
-                WHEN 'send_refuse' then '呼叫拒绝'
-                when 'recv_bye' THEN '主叫挂机'
-                when 'send_cancel' THEN '呼叫取消'
-                else t1.sip_hangup_disposition END as hangup_case,
-                t5.CCAgent as ccagent,t5.IvrStartTime as ivrstarttime,t5.QueueStartTime as queuestarttime, t5.QueueEndTime as queueendtime,t5.CCOfferingTime as ccofferringtime,
-                t5.CCAgentCalledTime as ccagentcalledtime,t5.CCAgentAnsweredTime as ccagentansweredtime,t5.CCHangupCauseTime as cchangupcausetime,t5.CCBridgeTerminatedTime as ccbridgeterminatedtime,
-                TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime) queue_times,
-                TIMESTAMPDIFF(SECOND,t5.CCAgentCalledTime,t5.CCAgentAnsweredTime) ring_times,
-                (CASE WHEN t5.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCAgentAnsweredTime)
-                WHEN t5.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCHangupCauseTime)
-                WHEN t5.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime)ELSE 0 END) AS wait_times, 
-                case t2.nLevel WHEN t2.nLevel is not NULL THEN t2.nLevelName else '未评价' END as nlevelname,t4.ringnum,t4.file
-                FROM cdr_table_a_leg as t1 
-                LEFT JOIN agentservicelevel as t2 ON t1.uuid=t2.uuid
-                left join cdr_table_b_leg t3 on t1.bleg_uuid=t3.uuid
-                left JOIN recordlog t4 on t1.uuid =t4.uuid
-                left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
-                left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
-                left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-                where t1.bleg_uuid is not null #CallUid `
+    let _sql = `SELECT
+                t2.ChannelUUid AS uuid,
+                t3.AgentName AS agentname,
+                t2.CallerNumber AS caller_id_number,
+                t2.CalleeNumber AS destination_number,
+                t2.TPAnswerTime AS start_stamp,
+                t2.CalleeAnswerTime AS CalleeAnswerTime,
+                t2.CallHangupTime AS end_stamp,
+                t2.TalkTime AS billsec,
+                '呼出' AS call_type,
+                CASE
+                WHEN t2.CalleeAnswerTime IS NULL THEN
+                '未接听'
+                ELSE
+                '接听'
+                END AS answer_status,
+                 CASE t2.Hangup_Dst
+                WHEN 'send_bye' THEN
+                '被叫挂机'
+                WHEN 'recv_cancel' THEN
+                '接受取消'
+                WHEN 'send_refuse' THEN
+                '呼叫拒绝'
+                WHEN 'recv_bye' THEN
+                '主叫挂机'
+                WHEN 'send_cancel' THEN
+                '呼叫取消'
+                ELSE
+                t2.Hangup_Dst
+                END AS hangup_case,
+                 CASE t4.nLevel
+                WHEN t4.nLevel IS NOT NULL THEN
+                t4.nLevelName
+                ELSE
+                '未评价'
+                END AS nlevelname,
+                 t5.ringnum,
+                 t5.file
+                FROM
+                agents AS t1
+                LEFT JOIN call_makecall t2 ON t1.\`name\` = t2.CCAgent
+                LEFT JOIN call_agent t3 ON t1. NAME = t3.agentid
+                LEFT JOIN agentservicelevel t4 ON t2.ChannelUUid = t4.uuid
+                LEFT JOIN recordlog t5 ON t2.ChannelUUid = t5.uuid
+                WHERE 1=1 #CallUid  `
 
-    if (keys["CallUid"]!=""&& keys["CallUid"]!=undefined){
-        _sql=_sql.replace("#CallUid",`and  t1.uuid = '${keys["CallUid"]}'`);
-    }else{
-        _sql=_sql.replace("#CallUid","");
+    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
+        _sql = _sql.replace("#CallUid", `and  t2.ChannelUUid = '${keys["CallUid"]}'`);
+    } else {
+        _sql = _sql.replace("#CallUid", "");
     }
     let table = await query(_sql, [])
 
@@ -638,7 +732,7 @@ let Ivr_StatisCount = function (startTime_epoch, endTime_epoch, start, end, Sele
  * @returns {Promise.<*>}
  * @constructor
  */
-let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
+let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
     try {
         let _sql = "select call_agent.AgentName as 坐席名称," +
             "sum(org is not null) as 排队数," +
@@ -647,7 +741,7 @@ let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, en
             "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
             "left join call_agent on agents.name = call_agent.AgentId where callstart.IvrStartTime BETWEEN ? and ? " +
             "group by agents.name LIMIT ?,?";
-        if (keys!="" && keys!=undefined){
+        if (keys != "" && keys != undefined) {
             _sql = "select call_agent.AgentName as 坐席名称," +
                 "sum(org is not null) as 排队数," +
                 "sum(CCAgentAnsweredTime is not null) as 应答数," +
@@ -703,14 +797,14 @@ let Agent_CallStatis = async function (startTime_epoch, endTime_epoch, start, en
     }
 
 }
-let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
+let Agent_CallStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
         let _sql = "select count(*) as count from(select agents.name as 坐席名称 " +
             "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
             "where callstart.IvrStartTime BETWEEN ? and ? " +
             "group by agents.name ) t1";
-        if (keys!="" && keys!=undefined){
+        if (keys != "" && keys != undefined) {
             _sql = "select count(*) as count from(select agents.name as 坐席名称 " +
                 "from agents left JOIN callstart on agents.name = callstart.CallerANI " +
                 "where callstart.IvrStartTime BETWEEN ? and ? and agents.name = ? " +
@@ -826,7 +920,7 @@ let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start
  * @returns {Promise.<*>}
  * @constructor
  */
-let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
+let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
         let _sql = "SELECT t1.AgentId as 坐席工号,t2.AgentName,:convert as time,sum(TIMESTAMPDIFF(SECOND,t1.CreateStartTime,t1.CreateEndTime)) as 登录总时长 " +
@@ -837,12 +931,12 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
         let groupByStrOne = await convertStr(SelectType, 't1.CreateStartTime');
         _sql = _sql.replace(/:convert/g, groupByStrOne);
         let arr;
-        if(keys["agentId"]!=""){
+        if (keys["agentId"] != "") {
             _sql = _sql.replace('#agentId', 'and t1.AgentId = ?');
-            arr= await query(_sql, [startTime_epoch, endTime_epoch,keys["agentId"], start, end]);
-        }else{
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["agentId"], start, end]);
+        } else {
             _sql = _sql.replace('#agentId', '');
-            arr= await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
         }
         let forCount = arr.length;
 
@@ -1002,7 +1096,7 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
         return e.message;
     }
 }
-let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType,keys) {
+let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
         let _sql = "select count(*) as count from (SELECT AgentId as 坐席工号,:convert as time " +
@@ -1011,12 +1105,12 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
         let groupByStr = await convertStr(SelectType, 'CreateStartTime');
         _sql = _sql.replace(/:convert/g, groupByStr);
         let arr;
-        if(keys["agentId"]!=""){
+        if (keys["agentId"] != "") {
             _sql = _sql.replace('#agentId', 'and AgentId = ?');
-            arr= await query(_sql, [startTime_epoch, endTime_epoch,keys["agentId"], start, end]);
-        }else{
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["agentId"], start, end]);
+        } else {
             _sql = _sql.replace('#agentId', '');
-            arr= await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
         }
         return arr;
 
@@ -1526,5 +1620,5 @@ module.exports = {
     select,
     count,
     CallInfo,
-    InboundDetailedCountForUUid,InboundDetailedForUUid
+    InboundDetailedCountForUUid, InboundDetailedForUUid
 }
