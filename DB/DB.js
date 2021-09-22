@@ -183,7 +183,13 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     let in_sql=`SELECT  t2.ChannelCallUUID as uuid,t3.AgentName as agentname,t6.SvcName as svcname,t2.CallerANI as caller_id_number,t2.CallerDestinationNumber as destination_number,
                 t2.IvrStartTime as start_stamp,t2.CallEndTime as end_stamp,
                 TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) billsec,
-                
+                '呼入' AS call_type,
+                CASE
+                WHEN  t2.CCAgentAnsweredTime IS NULL THEN
+                '未接听'
+                ELSE
+                '接听'
+                END AS answer_status,
                 t2.CCAgent as ccagent,t2.IvrStartTime as ivrstarttime,t2.QueueStartTime as queuestarttime, t2.QueueEndTime as queueendtime,t2.CCOfferingTime as ccofferringtime,
                 t2.CCAgentCalledTime as ccagentcalledtime,t2.CCAgentAnsweredTime as ccagentansweredtime,t2.CCHangupCauseTime as cchangupcausetime,t2.CCBridgeTerminatedTime as ccbridgeterminatedtime,
                 TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.QueueEndTime) queue_times,
@@ -194,10 +200,27 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 case t4.nLevel WHEN t4.nLevel is not NULL THEN t4.nLevelName else '未评价' END as nlevelname,t5.ringnum,t5.file
                 from agents t1
                 LEFT JOIN callstart t2 ON t1.\`name\` = t2.CCAgent
-                LEFT JOIN call_agent t3 ON t1. NAME = t3.agentid
+                LEFT JOIN call_agent t3 ON t1.NAME = t3.agentid
                 LEFT JOIN agentservicelevel t4 ON t2.ChannelCallUUID = t4.uuid
                 LEFT JOIN recordlog t5 ON t2.ChannelCallUUID = t5.uuid
-                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 `
+                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 #jdAgent #callerNumber #calleeNumber AND t2.IvrStartTime BETWEEN ? and ? LIMIT ?,?`
+
+    if (keys["jdAgent"] != "" && keys["jdAgent"] != undefined) {
+        params = [keys["jdAgent"], startTime_epoch, endTime_epoch, start, end]
+        in_sql = in_sql.replace("#jdAgent", 'and t1.NAME in (?)');
+    } else {
+        in_sql = in_sql.replace("#jdAgent", "");
+    }
+    if (keys["callerNumber"] != "" && keys["callerNumber"] != undefined) {
+        in_sql = in_sql.replace("#callerNumber", `and  t2.CallerANI = '${keys["callerNumber"]}'`);
+    } else {
+        in_sql = in_sql.replace("#callerNumber", "");
+    }
+    if (keys["calleeNumber"] != "" && keys["calleeNumber"] != undefined) {
+        in_sql = in_sql.replace("#calleeNumber", `and  t2.CallerDestinationNumber = '${keys["calleeNumber"]}'`);
+    } else {
+        in_sql = in_sql.replace("#calleeNumber", "");
+    }
 
 
     //不用 start
@@ -267,7 +290,7 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     let table = await query(out_sql, params)
 
     //呼入
-    let inTable = await query(out_sql, params)
+    let inTable = await query(in_sql, params)
 
     //let c=table.concat(inTable); //可能存在资源浪费
     table.push(...inTable);
