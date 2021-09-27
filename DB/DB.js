@@ -120,12 +120,14 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
     let params = [startTime_epoch, endTime_epoch, start, end];
     let out_sql = `SELECT
                 t2.ChannelUUid AS uuid,
+ t2.CCAgent as ccagent,
                 t3.AgentName AS agentname,
                 t2.CallerNumber AS caller_id_number,
                 t2.CalleeNumber AS destination_number,
-                t2.TPAnswerTime AS start_stamp,
-                t2.CalleeAnswerTime AS CalleeAnswerTime,
-                t2.CallHangupTime AS end_stamp,
+                CAST(t2.TPAnswerTime as CHAR) AS start_stamp,
+                CAST(t2.CalleeAnswerTime as CHAR) AS answer_stamp,
+ CAST(t2.CalleeRingTime as CHAR) as calleering_stamp,
+                CAST(t2.CallHangupTime as CHAR) AS end_stamp,
                 t2.TalkTime AS billsec,
                 '呼出' AS call_type,
                 CASE
@@ -180,19 +182,18 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
         out_sql = out_sql.replace("#calleeNumber", "");
     }
 
-    let in_sql=`SELECT  t2.ChannelCallUUID as uuid,t3.AgentName as agentname,t6.SvcName as svcname,t2.CallerANI as caller_id_number,t2.CallerDestinationNumber as destination_number,
+    let in_sql=`SELECT  t2.ChannelCallUUID as uuid,t2.CCAgent as ccagent,t3.AgentName as agentname,t6.SvcName as svcname,t2.CallerANI as caller_id_number,t2.CallerDestinationNumber as destination_number,
                 t2.IvrStartTime as start_stamp,t2.CallEndTime as end_stamp,
-                TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) billsec,
+                TIMESTAMPDIFF(SECOND,str_to_date(t2.CCAgentAnsweredTime,'%Y-%m-%d %H:%i:%s'),str_to_date(t2.CallEndTime,'%Y-%m-%d %H:%i:%s')) billsec,
                 '呼入' AS call_type,
                 CASE
                 WHEN  t2.CCAgentAnsweredTime IS NULL THEN
                 '未接听'
                 ELSE
                 '接听'
-                END AS answer_status,
-                t2.CCAgent as ccagent,t2.IvrStartTime as ivrstarttime,t2.QueueStartTime as queuestarttime, t2.QueueEndTime as queueendtime,t2.CCOfferingTime as ccofferringtime,
+                END AS answer_status, t2.IvrStartTime as ivrstarttime,t2.QueueStartTime as queuestarttime, t2.QueueEndTime as queueendtime,t2.CCOfferingTime as ccofferringtime,
                 t2.CCAgentCalledTime as ccagentcalledtime,t2.CCAgentAnsweredTime as ccagentansweredtime,t2.CCHangupCauseTime as cchangupcausetime,t2.CCBridgeTerminatedTime as ccbridgeterminatedtime,
-                TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.QueueEndTime) queue_times,
+                TIMESTAMPDIFF(SECOND,str_to_date(t2.QueueStartTime,'%Y-%m-%d %H:%i:%s'),str_to_date(t2.QueueEndTime,'%Y-%m-%d %H:%i:%s')) queue_times,
                 TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) ring_times,
                 (CASE WHEN t2.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCAgentAnsweredTime)
                 WHEN t2.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCHangupCauseTime)
@@ -203,7 +204,8 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
                 LEFT JOIN call_agent t3 ON t1.NAME = t3.agentid
                 LEFT JOIN agentservicelevel t4 ON t2.ChannelCallUUID = t4.uuid
                 LEFT JOIN recordlog t5 ON t2.ChannelCallUUID = t5.uuid
-                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 #jdAgent #callerNumber #calleeNumber AND t2.IvrStartTime BETWEEN ? and ? LIMIT ?,?`
+                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 
+                 #jdAgent #callerNumber #calleeNumber AND t2.IvrStartTime BETWEEN ? and ? LIMIT ?,?`
 
     if (keys["jdAgent"] != "" && keys["jdAgent"] != undefined) {
         params = [keys["jdAgent"], startTime_epoch, endTime_epoch, start, end]
@@ -222,77 +224,13 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
         in_sql = in_sql.replace("#calleeNumber", "");
     }
 
-
-    //不用 start
-    let _sql = `SELECT t1.uuid,t6.AgentName as agentname,t7.SvcName as svcname,t1.caller_id_number,t1.destination_number,t1.start_stamp,t1.answer_stamp,t1.end_stamp,
-                t1.billsec,t3.answer_stamp as calleering_stamp,
-                case t1.last_app when 'bridge' THEN '呼出' WHEN 'callcenter' THEN '呼入' ELSE t1.last_app END as call_type,
-                case when t1.answer_epoch =0 THEN '未接听' else '接听' END as answer_status,
-                case  t1.sip_hangup_disposition WHEN 'send_bye' THEN '被叫挂机'  
-                WHEN 'recv_cancel' then '接受取消' 
-                WHEN 'send_refuse' then '呼叫拒绝'
-                when 'recv_bye' THEN '主叫挂机'
-                when 'send_cancel' THEN '呼叫取消'
-                else t1.sip_hangup_disposition END as hangup_case,
-                t5.CCAgent as ccagent,t5.IvrStartTime as ivrstarttime,t5.QueueStartTime as queuestarttime, t5.QueueEndTime as queueendtime,t5.CCOfferingTime as ccofferringtime,
-                t5.CCAgentCalledTime as ccagentcalledtime,t5.CCAgentAnsweredTime as ccagentansweredtime,t5.CCHangupCauseTime as cchangupcausetime,t5.CCBridgeTerminatedTime as ccbridgeterminatedtime,
-                TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime) queue_times,
-                TIMESTAMPDIFF(SECOND,t5.CCAgentCalledTime,t5.CCAgentAnsweredTime) ring_times,
-                (CASE WHEN t5.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCAgentAnsweredTime)
-                WHEN t5.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.CCHangupCauseTime)
-                WHEN t5.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t5.QueueStartTime,t5.QueueEndTime)ELSE 0 END) AS wait_times, 
-                case t2.nLevel WHEN t2.nLevel is not NULL THEN t2.nLevelName else '未评价' END as nlevelname,t4.ringnum,t4.file
-                FROM cdr_table_a_leg as t1 
-                LEFT JOIN agentservicelevel as t2 ON t1.uuid=t2.uuid
-                left join cdr_table_b_leg t3 on t1.bleg_uuid=t3.uuid
-                left JOIN recordlog t4 on t1.uuid =t4.uuid
-                left JOIN callstart t5 on t5.ChannelCallUUID = t1.uuid
-                left JOIN call_agent t6 on t5.CCAgent=t6.AgentId
-                left JOIN call_ivrsvc t7 on t5.Org =t7.SvcCode
-                where t1.bleg_uuid is not null #jdAgent #OrgId #callerNumber #calleeNumber #answerStatus #callType 
-                 AND t1.start_stamp BETWEEN ? and ? order by t1.answer_stamp desc LIMIT ?,?`
-    if (keys["OrgId"] != "" && keys["OrgId"] != undefined) {
-        params = [keys["OrgId"], startTime_epoch, endTime_epoch, start, end]
-        _sql = _sql.replace("#OrgId", 'and t5.Org in (?)');
-    } else {
-        _sql = _sql.replace("#OrgId", "");
-    }
-    if ((keys["jdAgent"] != "" && keys["jdAgent"] != undefined) && (keys["OrgId"] != "" && keys["OrgId"] != undefined)) {
-        params = [keys["jdAgent"], keys["OrgId"], startTime_epoch, endTime_epoch, start, end]
-    }
-
-    if (keys["answerStatus"] != "" && keys["answerStatus"] != undefined) {
-        if (keys["answerStatus"] == "接听") {
-            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch !=0`);
-        } else if (keys["answerStatus"] == "未接听") {
-            _sql = _sql.replace("#answerStatus", `and t1.answer_epoch =0`);
-        } else {
-            _sql = _sql.replace("#answerStatus", "");
-        }
-    } else {
-        _sql = _sql.replace("#answerStatus", "");
-    }
-    if (keys["callType"] != "" && keys["callType"] != undefined) {
-        if (keys["callType"] == "呼入") {
-            _sql = _sql.replace("#callType", `and t1.last_app = 'callcenter'`);
-        } else if (keys["callType"] == "呼出") {
-            _sql = _sql.replace("#callType", `and t1.last_app = 'bridge'`);
-        } else {
-            _sql = _sql.replace("#callType", "");
-        }
-    } else {
-        _sql = _sql.replace("#callType", "");
-    }
-    //不用 end
-
-    //console.log("out--sql>" + out_sql)
     //呼出
     let table = await query(out_sql, params)
 
     //呼入
     let inTable = await query(in_sql, params)
 
-    //let c=table.concat(inTable); //可能存在资源浪费
+    //let c=table.concat(inTable); //存在资源浪费
     table.push(...inTable);
 
     //添加元素
@@ -307,6 +245,7 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
             table[i].holdNumber = 0;
         }
     }
+
 
     return table
 }
