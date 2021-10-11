@@ -306,6 +306,7 @@ let InboundDetailedCount = function (startTime_epoch, endTime_epoch, start, end,
 }
 
 
+//不再使用
 let InboundDetailedCountForUUid = function (keys) {
     let _sql = `SELECT count(*) as count from call_makecall  where #CallUid`
 
@@ -317,15 +318,27 @@ let InboundDetailedCountForUUid = function (keys) {
     return query(_sql, [])
 }
 let InboundDetailedForUUid = async function (keys) {
-
-    let _sql = `SELECT
+    console.log("通过id查询数据." + keys["CallUid"])
+    let _sql;
+    let table;
+    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
+        //通过id先去查询呼入数据，如果不存在在去查询呼出。
+        let in_CallSql = `select count(*) as count from call_makecall where ChannelUUid = ?`
+        let in_CallTable = await query(in_CallSql, [keys["CallUid"]])
+        console.log("呼出数据为：" + in_CallTable[0]["count"])
+        if (in_CallTable[0]["count"] > 0) {
+            console.log("查询呼出表数据")
+            //证明查到数据了，然后就去查询外呼的表数据
+            _sql = `SELECT
                 t2.ChannelUUid AS uuid,
+ t2.CCAgent as ccagent,
                 t3.AgentName AS agentname,
                 t2.CallerNumber AS caller_id_number,
                 t2.CalleeNumber AS destination_number,
-                t2.TPAnswerTime AS start_stamp,
-                t2.CalleeAnswerTime AS CalleeAnswerTime,
-                t2.CallHangupTime AS end_stamp,
+                CAST(t2.TPAnswerTime as CHAR) AS start_stamp,
+                CAST(t2.CalleeAnswerTime as CHAR) AS answer_stamp,
+ CAST(t2.CalleeRingTime as CHAR) as calleering_stamp,
+                CAST(t2.CallHangupTime as CHAR) AS end_stamp,
                 t2.TalkTime AS billsec,
                 '呼出' AS call_type,
                 CASE
@@ -362,26 +375,51 @@ let InboundDetailedForUUid = async function (keys) {
                 LEFT JOIN call_agent t3 ON t1. NAME = t3.agentid
                 LEFT JOIN agentservicelevel t4 ON t2.ChannelUUid = t4.uuid
                 LEFT JOIN recordlog t5 ON t2.ChannelUUid = t5.uuid
-                WHERE 1=1 #CallUid  `
-
-    if (keys["CallUid"] != "" && keys["CallUid"] != undefined) {
-        _sql = _sql.replace("#CallUid", `and  t2.ChannelUUid = '${keys["CallUid"]}'`);
-    } else {
-        _sql = _sql.replace("#CallUid", "");
-    }
-    let table = await query(_sql, [])
-
-    //添加元素
-    //如果是呼入电话的话，计算必要元素
-
-    for (let i = 0; i < table.length; i++) {
-        let uuid = table[i]["uuid"];
-        if (uuid != "") {
-            let hold = await query("select count(*) as count from agent_hold where uuid=?", [table[i]["uuid"]])
-            table[i].holdNumber = hold[0]["count"];
+                WHERE t2.ChannelUUid = ? `
         } else {
-            table[i].holdNumber = 0;
+            console.log("查询呼入表数据")
+            //否则去查询呼入数据
+            _sql = `SELECT  t2.ChannelCallUUID as uuid,t2.CCAgent as ccagent,t3.AgentName as agentname,t6.SvcName as svcname,t2.CallerANI as caller_id_number,t2.CallerDestinationNumber as destination_number,
+                t2.IvrStartTime as start_stamp,t2.CallEndTime as end_stamp,
+                TIMESTAMPDIFF(SECOND,str_to_date(t2.CCAgentAnsweredTime,'%Y-%m-%d %H:%i:%s'),str_to_date(t2.CallEndTime,'%Y-%m-%d %H:%i:%s')) billsec,
+                '呼入' AS call_type,
+                CASE
+                WHEN  t2.CCAgentAnsweredTime IS NULL THEN
+                '未接听'
+                ELSE
+                '接听'
+                END AS answer_status, t2.IvrStartTime as ivrstarttime,t2.QueueStartTime as queuestarttime, t2.QueueEndTime as queueendtime,t2.CCOfferingTime as ccofferringtime,
+                t2.CCAgentCalledTime as ccagentcalledtime,t2.CCAgentAnsweredTime as ccagentansweredtime,t2.CCHangupCauseTime as cchangupcausetime,t2.CCBridgeTerminatedTime as ccbridgeterminatedtime,
+                TIMESTAMPDIFF(SECOND,str_to_date(t2.QueueStartTime,'%Y-%m-%d %H:%i:%s'),str_to_date(t2.QueueEndTime,'%Y-%m-%d %H:%i:%s')) queue_times,
+                TIMESTAMPDIFF(SECOND,t2.CCAgentCalledTime,t2.CCAgentAnsweredTime) ring_times,
+                (CASE WHEN t2.CCAgentAnsweredTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCAgentAnsweredTime)
+                WHEN t2.CCOfferingTime IS NOT NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.CCHangupCauseTime)
+                WHEN t2.CCOfferingTime IS NULL THEN TIMESTAMPDIFF(SECOND,t2.QueueStartTime,t2.QueueEndTime)ELSE 0 END) AS wait_times,
+                case t4.nLevel WHEN t4.nLevel is not NULL THEN t4.nLevelName else '未评价' END as nlevelname,t5.ringnum,t5.file
+                from agents t1
+                LEFT JOIN callstart t2 ON t1.\`name\` = t2.CCAgent
+                LEFT JOIN call_agent t3 ON t1.NAME = t3.agentid
+                LEFT JOIN agentservicelevel t4 ON t2.ChannelCallUUID = t4.uuid
+                LEFT JOIN recordlog t5 ON t2.ChannelCallUUID = t5.uuid
+                 left JOIN call_ivrsvc t6 on t2.Org =t6.SvcCode where 1=1 and t2.ChannelCallUUID = ? `
         }
+        table = await query(_sql, [keys["CallUid"]])
+
+        //添加元素
+        //如果是呼入电话的话，计算必要元素
+
+        for (let i = 0; i < table.length; i++) {
+            let uuid = table[i]["uuid"];
+            if (uuid != "") {
+                let hold = await query("select count(*) as count from agent_hold where uuid=?", [table[i]["uuid"]])
+                table[i].holdNumber = hold[0]["count"];
+            } else {
+                table[i].holdNumber = 0;
+            }
+        }
+
+    } else {
+        table = null;
     }
 
     return table

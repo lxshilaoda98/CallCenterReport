@@ -290,8 +290,12 @@ class ReportController {
             let count;
             let cs;
             if (CallUid!=undefined && CallUid!=""){
-                count = await selectTableCount('InboundDetailedCountForUUid',keys);
                 cs = await selectTable('InboundDetailedForUUid', keys);
+                if (cs.length > 0) {
+                    count = [{"count": 1}];
+                } else {
+                    count = [{"count": 0}];
+                }
             }else{
                 startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
                 endTime_epoch = timestampToTime(endTime_epoch)
