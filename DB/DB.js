@@ -1046,20 +1046,9 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
 let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
-        let _sql = "select count(*) as count from (SELECT AgentId as 坐席工号,:convert as time " +
-            `from agent_login where CreateStartTime BETWEEN ? and ? #agentId group by AgentId,:convert) as t1`;
-
-        let groupByStr = await convertStr(SelectType, 'CreateStartTime');
-        _sql = _sql.replace(/:convert/g, groupByStr);
-        let arr;
-        if (keys["agentId"] != "") {
-            _sql = _sql.replace('#agentId', 'and AgentId = ?');
-            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["agentId"], start, end]);
-        } else {
-            _sql = _sql.replace('#agentId', '');
-            arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
-        }
-        return arr;
+        let agentTable =`select count(*) as count from  (select AgentId from call_agent LIMIT ?,?) as t1`
+        let agentArr = await query(agentTable, [start,end]);
+        return agentArr;
 
     } catch (e) {
         return e.message;
