@@ -921,20 +921,39 @@ let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start
  * @constructor
  */
 
-function NewAgentCountStatis(){
-    //先找到坐席，再去做数据拼接
-    let agentTable =`select :convert as time,t2.AgentId as 坐席工号,t1.AgentName,sum(TIMESTAMPDIFF(SECOND,t2.CreateStartTime,t2.CreateEndTime)) as 登录总时长  
-from call_agent as t1
-LEFT join agent_login t2 ON t1.AgentId = t2.AgentId
-where t2.CreateStartTime BETWEEN ? and ? #agentId group by t1.AgentId,:convert LIMIT ?,?`  //先计算登录总时长
-}
 
 let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
+
         //先得到所有人的数据，如果多租户也记得做一下 【暂时没有通过参数查询】
-        let agentTable =`select agentId,agentName from call_agent  LIMIT ?,?`
-        let agentArr = await query(agentTable, [start,end]);
+        let agentTable =`select agentId,agentName from call_agent #agentId  LIMIT ?,?`
+        let agentArr;
+
+        if (keys["orgStr"] != ""){
+            //如果有技能组数据，就去查询，本次技能组的id。 有哪些人员信息
+            let orgTable = `select AgentId from call_agentskill where SvcCode in (?) `;
+            let orgArr = await query(orgTable, [keys["orgStr"]]);
+
+            if (keys["agentId"]!=""){
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            } else{
+                keys["agentId"]=[]
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            }
+        }
+        if (keys["agentId"] != "") {
+            agentTable = agentTable.replace(/#agentId/g, "where agentId in (?)");
+            agentArr = await query(agentTable, [keys["agentId"],start,end]);
+        }else{
+            agentTable = agentTable.replace(/#agentId/g, "");
+            agentArr = await query(agentTable, [start,end]);
+        }
+
         for (let i = 0; i < agentArr.length; i++){
             //1.开始计算总登录时长
             let dlzTable=`select sum(TIMESTAMPDIFF(SECOND,t2.CreateStartTime,t2.CreateEndTime)) as 登录总时长  
@@ -1046,8 +1065,31 @@ let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, en
 let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
-        let agentTable =`select count(*) as count from  (select AgentId from call_agent LIMIT ?,?) as t1`
-        let agentArr = await query(agentTable, [start,end]);
+        let agentTable =`select count(*) as count from  (select AgentId from call_agent #agentId LIMIT ?,?) as t1`
+        let agentArr;
+        if (keys["orgStr"] != ""){
+            //如果有技能组数据，就去查询，本次技能组的id。 有哪些人员信息
+            let orgTable = `select AgentId from call_agentskill where SvcCode in (?) `;
+            let orgArr = await query(orgTable, [keys["orgStr"]]);
+
+            if (keys["agentId"]!=""){
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            } else{
+                keys["agentId"]=[]
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            }
+        }
+        if (keys["agentId"] != "") {
+            agentTable = agentTable.replace(/#agentId/g, "where agentId in (?)");
+            agentArr = await query(agentTable, [keys["agentId"],start,end]);
+        }else{
+            agentTable = agentTable.replace(/#agentId/g, "");
+            agentArr = await query(agentTable, [start,end]);
+        }
         return agentArr;
 
     } catch (e) {

@@ -255,11 +255,16 @@ class StatisticsReport {
             let endTime_epoch = ctx.request.query.eTime_epoch;
             let SelectType = ctx.request.query.type;
             let AgentId = ctx.request.query.agentId;
+            let OrgId = ctx.request.query.orgId;
             let gg = "";
+            let orgStr="";
             if (AgentId != "" && AgentId != undefined) {
                 gg = AgentId.split(',');
             }
-            let keys = {"agentId": gg}
+            if (OrgId!= "" && OrgId != undefined){
+                orgStr = OrgId.split(',');
+            }
+            let keys = {"agentId": gg,"orgStr":orgStr}
 
             startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
             endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
