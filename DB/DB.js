@@ -1110,40 +1110,36 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
 let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
-        let _sql = "select Org as 技能组Id,call_ivrsvc.SvcName as 技能组名称,:convert as time,count(*) as 呼入电话数," +
-            "sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) as 等待时长, " +
-            "round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) / sum(QueueStartTime is not null),0) as 平均等待时长," +
-            "sum(QueueStartTime is null) as 未转坐席放弃量,sum(CCAgentAnsweredTime is not NULL) as 通话数量," +
-            "round(sum(TIMESTAMPDIFF(SECOND,CCAgentAnsweredTime,CallEndTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均通话时长," +
-            "round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均应答速度," +
-            "sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as 放弃电话数量," +
-            "CONcat(round(sum(CCAgentAnsweredTime is NULL and CCAgent is not null) /count(*) * 100 ,0),'%') as 放弃率," +
-            "round(sum(TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is NULL and CCAgent is not null),0) as 平均放弃时长," +
-            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) < 20 then 1 else 0 END) as 等待小于20秒的个数," +
-            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 20 and 40 then 1 else 0 END) as 等待20到40秒的个数, " +
-            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 40 and 60 then 1 else 0 END) as 等待40到60秒的个数," +
-            "sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) > 60 then 1 else 0 END) as 等待大于60秒的个数 " +
-            "from callstart LEFT JOIN call_ivrsvc ON callstart.Org=call_ivrsvc.SvcCode " +
-            "where Org is not null and QueueStartTime is not null " +
-            "and IvrStartTime BETWEEN ? and ? :orgOid " +
-            "GROUP BY Org,:convert LIMIT ?,?";
+        let _sql = `select Org as 技能组Id,call_ivrsvc.SvcName as 技能组名称, count(*) as 呼入电话数,
+        sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) as 等待时长, 
+        round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,QueueEndTime)) / sum(QueueStartTime is not null),0) as 平均等待时长,
+        sum(QueueStartTime is null) as 未转坐席放弃量,sum(CCAgentAnsweredTime is not NULL) as 通话数量,
+        round(sum(TIMESTAMPDIFF(SECOND,CCAgentAnsweredTime,CallEndTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均通话时长,
+        round(sum(TIMESTAMPDIFF(SECOND,QueueStartTime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is not NULL),0) as 平均应答速度,
+        sum(CCAgentAnsweredTime is NULL and CCAgent is not null) as 放弃电话数量,
+        CONcat(round(sum(CCAgentAnsweredTime is NULL and CCAgent is not null) /count(*) * 100 ,0),'%') as 放弃率,
+        round(sum(TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime)) / sum(CCAgentAnsweredTime is NULL and CCAgent is not null),0) as 平均放弃时长,
+        sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) < 20 then 1 else 0 END) as 等待小于20秒的个数,
+        sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 20 and 40 then 1 else 0 END) as 等待20到40秒的个数,
+        sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) BETWEEN 40 and 60 then 1 else 0 END) as 等待40到60秒的个数,
+        sum(CASE when TIMESTAMPDIFF(SECOND,ccagentcalledtime,CCAgentAnsweredTime) > 60 then 1 else 0 END) as 等待大于60秒的个数
+        from callstart LEFT JOIN call_ivrsvc ON callstart.Org=call_ivrsvc.SvcCode
+    where  QueueStartTime is not null and IvrStartTime BETWEEN ? and ? :orgOid
+    GROUP BY Org `;
 
         let arr;
-        let groupByStr = await convertStr(SelectType, 'IvrStartTime');
-        _sql = _sql.replace(/:convert/g, groupByStr);
-
-        if (keys["org"] != "") {
+        console.log("org:" + keys["org"]);
+        if (keys["org"] != "" && keys["org"] != undefined) {
             _sql = _sql.replace(/:orgOid/g, 'and Org in (?)');
-            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["org"], start, end]);
+            arr = await query(_sql, [startTime_epoch, endTime_epoch, keys["org"]]);
         } else {
             _sql = _sql.replace(/:orgOid/g, '');
-            arr = await query(_sql, [startTime_epoch, endTime_epoch, start, end]);
+            arr = await query(_sql, [startTime_epoch, endTime_epoch]);
         }
-
 
         let forCount = arr.length;
 
-        for (var i = 0; i < forCount; i++) {
+        for (let i = 0; i < forCount; i++) {
             //由于时间格式问题，所以新增一个字段
             arr[i].日期 = arr[i]["time"] == null ? 0 : moment(arr[i]["time"]).format('YYYY-MM-DD');
         }
@@ -1154,16 +1150,14 @@ let OrgCountStatis = async function (startTime_epoch, endTime_epoch, start, end,
     }
 }
 let OrgCountStatisCount = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
-
     try {
-        let _sql = "select count(*) as count from (select Org as 技能组,:convert as time " +
+        let _sql = "select count(*) as count from (select Org as 技能组 " +
             "from callstart " +
             "where Org is not null and QueueStartTime is not null " +
             "and IvrStartTime BETWEEN ? and ? :orgOid" +
-            "GROUP BY Org,:convert ) as t1";
-        let groupByStr = await convertStr(SelectType, 'IvrStartTime');
-        _sql = _sql.replace(/:convert/g, groupByStr);
-        if (keys["org"] != "") {
+            "GROUP BY Org ) as t1";
+
+        if (keys["org"] != "" && keys["org"] != undefined) {
             _sql = _sql.replace(/:orgOid/g, 'and Org in (?)');
         } else {
             _sql = _sql.replace(/:orgOid/g, '');
