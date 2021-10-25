@@ -12,8 +12,8 @@ function selectTable(table, keys, phoneName, startTime_epoch, endTime_epoch, sta
             log.info("[StatisReport].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table) {
-                case 'Ivr_Statis' :
-                    resolve(db.Ivr_Statis(startTime_epoch, endTime_epoch, start, end, SelectType));
+                case 'AgentStatusStatis' :
+                    resolve(db.AgentStatusStatis(startTime_epoch, endTime_epoch, start, end, SelectType,keys));
                     break;
                 case 'Agent_CallStatis' :
                     resolve(db.Agent_CallStatis(startTime_epoch, endTime_epoch, start, end, SelectType,keys));
@@ -63,6 +63,10 @@ function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch
             log.info("[StatisReportCount].>调用了..>" + table + `..>参数.>keys=${keys}phoneName=${phoneName}
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table) {
+
+                case 'AgentStatusStatisCount' :
+                    resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
+                    break;
                 case 'Ivr_StatisCount' :
                     resolve(db.Ivr_StatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
@@ -285,6 +289,58 @@ class StatisticsReport {
             }
 
         } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    /**
+     * 坐席状态
+     * @param ctx
+     * @returns {Promise<void>}
+     * @constructor
+     */
+    async AgentStatusStatis(ctx){
+        let body;
+        try {
+            let gg = "";
+            let orgStr="";
+
+            let page = ctx.request.query.page;
+            let pagesize = ctx.request.query.pagesize;
+            let startTime_epoch = ctx.request.query.sTime_epoch;
+            let endTime_epoch = ctx.request.query.eTime_epoch;
+            let AgentId = ctx.request.query.agentId;
+            let OrgId = ctx.request.query.orgId;
+            if (AgentId != "" && AgentId != undefined) {
+                gg = AgentId.split(',');
+            }
+            if (OrgId!= "" && OrgId != undefined){
+                orgStr = OrgId.split(',');
+            }
+            let keys = {"agentId": gg,"orgStr":orgStr}
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * pagesize; //当前页
+            let end = pagesize * 1; //每页显示
+
+            let count = await selectTableCount('AgentStatusStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('AgentStatusStatis', keys, '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'total': count["0"].count,
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+        }catch (e) {
             body = {
                 'code': 1,
                 'message': e.message,

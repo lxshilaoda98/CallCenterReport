@@ -920,12 +920,9 @@ let CallCountStatisCount = async function (startTime_epoch, endTime_epoch, start
  * @returns {Promise.<*>}
  * @constructor
  */
-
-
 let AgentCountStatis = async function (startTime_epoch, endTime_epoch, start, end, SelectType, keys) {
 
     try {
-
         //先得到所有人的数据，如果多租户也记得做一下 【暂时没有通过参数查询】
         let agentTable =`select agentId,agentName from call_agent #agentId  LIMIT ?,?`
         let agentArr;
@@ -1090,6 +1087,7 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
             agentTable = agentTable.replace(/#agentId/g, "");
             agentArr = await query(agentTable, [start,end]);
         }
+        console.log(agentArr)
         return agentArr;
 
     } catch (e) {
@@ -1097,6 +1095,132 @@ let AgentCountStatisCount = async function (startTime_epoch, endTime_epoch, star
     }
 }
 
+
+/**
+ *
+ * @param startTime_epoch
+ * @param endTime_epoch
+ * @param start
+ * @param end
+ * @param SelectType
+ * @param keys
+ * @returns {Promise<*>}
+ * @constructor
+ */
+let AgentStatusStatisCount = async function(startTime_epoch, endTime_epoch, start, end, SelectType, keys){
+
+}
+let AgentStatusStatis =async function(startTime_epoch, endTime_epoch, start, end, SelectType, keys){
+    try {
+        //先得到所有人的数据，如果多租户也记得做一下 【暂时没有通过参数查询】
+        let agentTable =`select agentId,agentName from call_agent #agentId  LIMIT ?,?`
+        let agentArr;
+
+        if (keys["orgStr"] != ""){
+            //如果有技能组数据，就去查询，本次技能组的id。 有哪些人员信息
+            let orgTable = `select AgentId from call_agentskill where SvcCode in (?) `;
+            let orgArr = await query(orgTable, [keys["orgStr"]]);
+
+            if (keys["agentId"]!=""){
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            } else{
+                keys["agentId"]=[]
+                for (let i=0;i<orgArr.length;i++){
+                    keys["agentId"].push(orgArr[i]["AgentId"])
+                }
+            }
+        }
+        if (keys["agentId"] != "") {
+            agentTable = agentTable.replace(/#agentId/g, "where agentId in (?)");
+            agentArr = await query(agentTable, [keys["agentId"],start,end]);
+        }else{
+            agentTable = agentTable.replace(/#agentId/g, "");
+            agentArr = await query(agentTable, [start,end]);
+        }
+        for (let i = 0; i < agentArr.length; i++){
+            //1.开始计算总登录时长
+            let dlzTable=`select sum(TIMESTAMPDIFF(SECOND,t2.CreateStartTime,t2.CreateEndTime)) as 登录总时长  
+                from call_agent as t1
+                LEFT join agent_login t2 ON t1.AgentId = t2.AgentId
+                where t2.CreateStartTime BETWEEN ? and ? and t1.AgentId = ? group by t1.AgentId `
+            let dlzArr = await query(dlzTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (dlzArr.length >0){
+                agentArr[i].agentLogin_sec=dlzArr[0]["登录总时长"];
+            }
+            //2.开始计算空闲总时长
+            let ideTable=`select sum(TIMESTAMPDIFF(SECOND,t2.CreateStartTime,t2.CreateEndTime)) as 空闲总时长  
+                from call_agent as t1
+                LEFT join agent_ide t2 ON t1.AgentId = t2.AgentId
+                where t2.CreateStartTime BETWEEN ? and ? and t1.AgentId = ? group by t1.AgentId `
+            let ideArr = await query(ideTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (ideArr.length >0){
+                agentArr[i].agentIde_sec=ideArr[0]["空闲总时长"];
+            }
+            //3.计算小休时长
+            let auxTable=`select sum(TIMESTAMPDIFF(SECOND,t2.CreateStartTime,t2.CreateEndTime)) as 小休总时长  
+                from call_agent as t1
+                LEFT join agent_aux t2 ON t1.AgentId = t2.AgentId
+                where t2.CreateStartTime BETWEEN ? and ? and t1.AgentId = ? group by t1.AgentId `
+            let auxArr = await query(auxTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (auxArr.length >0){
+                agentArr[i].agentAux_sec=auxArr[0]["小休总时长"];
+            }
+            //4.计算呼入数据
+            let callInTable=`select sum(TIMESTAMPDIFF(SECOND,CCAgentAnsweredTime,CallEndTime)) as 呼入通话时长
+            from callstart where IvrStartTime BETWEEN ? and ? and CCAgent = ? `
+            let callInArr = await query(callInTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (callInArr.length > 0){
+                agentArr[i].callInTime=callInArr[0]["呼入通话时长"]==null?0:callInArr[0]["呼入通话时长"];
+            }
+            //5.计算呼出数据
+            let callOutTable =`select sum(TalkTime) AS 呼出通话时长 
+                from call_makecall where TPAnswerTime BETWEEN ? and ? and CCAgent = ?`
+            let callOutArr = await query(callOutTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (callOutArr.length > 0){
+                agentArr[i].outCallTime=callOutArr[0]["呼出通话时长"]==null?0:callOutArr[0]["呼出通话时长"];
+            }
+            //计算通话时长
+            agentArr[i].callTime=agentArr[i].outCallTime+agentArr[i].callInTime;
+
+            //6.保持相关数据
+            let holdTable=`SELECT count(*) as 保持次数,sum(TIMESTAMPDIFF(SECOND,CreateStartTime,CreateEndTime)) as 保持时长 
+            from agent_hold where CreateStartTime BETWEEN ? and ? and agentid = ? `;
+            let holdArr = await query(holdTable, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (holdArr.length >0){
+                agentArr[i].holdNumber=holdArr[0]["保持次数"]==null?0:holdArr[0]["保持次数"];
+                agentArr[i].holdTime=holdArr[0]["保持时长"]==null?0:holdArr[0]["保持时长"];
+
+            }
+            //7.计算其他
+            //最近签入时间
+            let qrTimeSql = ` select  CAST(CreateStartTime as CHAR) as CreateStartTime
+            from call_agent as t1
+            LEFT join agent_login t2 ON t1.AgentId = t2.AgentId
+             where t2.CreateStartTime BETWEEN ? and ? and t1.AgentId = ? group by t1.AgentId
+            ORDER BY CreateStartTime desc `
+            let qrTimeArr = await query(qrTimeSql, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (qrTimeArr.length >0){
+                agentArr[i].agentLoginTime=qrTimeArr[0]["CreateStartTime"];
+            }
+            //最近签出时间
+            let qcTimeSql = `select  CAST(createEndtime as CHAR) as createEndtime
+            from call_agent as t1
+            LEFT join agent_login t2 ON t1.AgentId = t2.AgentId 
+            where t2.CreateStartTime BETWEEN ? and ? and t1.AgentId = ? group by t1.AgentId
+            ORDER BY CreateStartTime desc `
+            let qcTimeArr = await query(qcTimeSql, [startTime_epoch, endTime_epoch,agentArr[i]["agentId"]]);
+            if (qcTimeArr.length >0){
+                agentArr[i].agentLogoutTime=qcTimeArr[0]["createEndtime"];
+            }
+
+        }
+        return agentArr;
+    }catch (e) {
+        return e.message;
+    }
+}
 /**
  * 技能组综合统计
  * @param startTime_epoch
@@ -1540,6 +1664,7 @@ module.exports = {
     Agent_CallStatis,
     CallCountStatis,
     AgentCountStatis,
+    AgentStatusStatisCount,
     OrgCountStatis,
     OutCallStatis,
     AgentACWStatis,
@@ -1561,7 +1686,7 @@ module.exports = {
     agent_acwCount,
     agent_auxCount,
     agent_holdCount,
-
+    AgentStatusStatis,
     Ivr_StatisCount,
     Agent_CallStatisCount,
     CallCountStatisCount,

@@ -25,6 +25,8 @@ router
     .get('/Statistic/Agent_CallStatis', Statistic.Agent_CallStatis)
     .get('/Statistic/CallCountStatis', Statistic.CallCountStatis)
     .get('/Statistic/AgentCountStatis', Statistic.AgentCountStatis)
+    .get('/Statistic/AgentStatusStatis', Statistic.AgentStatusStatis)
+
     .get('/Statistic/OrgCountStatis', Statistic.OrgCountStatis)
     .get('/Statistic/OutCallStatis', Statistic.OutCallStatis)
     .get('/Statistic/AgentACWStatis', Statistic.AgentACWStatis)
