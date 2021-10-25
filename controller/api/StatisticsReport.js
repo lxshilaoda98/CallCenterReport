@@ -64,9 +64,7 @@ function selectTableCount(table, keys, phoneName, startTime_epoch, endTime_epoch
             startTime_epoch=${startTime_epoch}endTime_epoch=${endTime_epoch}start=${start}end=${end}`)
             switch (table) {
 
-                case 'AgentStatusStatisCount' :
-                    resolve(db.AgentCountStatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
-                    break;
+
                 case 'Ivr_StatisCount' :
                     resolve(db.Ivr_StatisCount(startTime_epoch, endTime_epoch, start, end, SelectType));
                     break;
@@ -330,7 +328,7 @@ class StatisticsReport {
             let start = (page - 1) * pagesize; //当前页
             let end = pagesize * 1; //每页显示
 
-            let count = await selectTableCount('AgentStatusStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+            let count = await selectTableCount('AgentCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end);
             let cs = await selectTable('AgentStatusStatis', keys, '', startTime_epoch, endTime_epoch, start, end);
             body = {
                 'total': count["0"].count,
