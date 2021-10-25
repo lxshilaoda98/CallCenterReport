@@ -9,9 +9,10 @@ router
 
     .get('/detailed/IVRDetailed', Detailed.IVRDetailed)
     .get('/detailed/AgentLoginDetailed', Detailed.AgentLoginDetailed)
-    .get('/detailed/InboundDetailed', Detailed.InboundDetailed)
-    .get('/detailed/CallInfo',Detailed.CallInfo)
 
+    .get('/detailed/InboundDetailed', Detailed.InboundDetailed)
+    .post('/detailed/InboundDetailed', Detailed.InboundDetailed)
+    .get('/detailed/CallInfo',Detailed.CallInfo)
     .get('/detailed/OutCallDetailed', Detailed.OutCallDetailed)
     .get('/detailed/AcdQueueDetailed', Detailed.AcdQueueDetailed)
     .get('/detailed/CallHanguDetailed', Detailed.CallHanguDetailed)
@@ -25,7 +26,10 @@ router
     .get('/Statistic/Agent_CallStatis', Statistic.Agent_CallStatis)
     .get('/Statistic/CallCountStatis', Statistic.CallCountStatis)
     .get('/Statistic/AgentCountStatis', Statistic.AgentCountStatis)
+    .post('/Statistic/AgentCountStatis', Statistic.AgentCountStatis)
+
     .get('/Statistic/AgentStatusStatis', Statistic.AgentStatusStatis)
+    .post('/Statistic/AgentStatusStatis', Statistic.AgentStatusStatis)
 
     .get('/Statistic/OrgCountStatis', Statistic.OrgCountStatis)
     .get('/Statistic/OutCallStatis', Statistic.OutCallStatis)
