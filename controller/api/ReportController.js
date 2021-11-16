@@ -326,6 +326,84 @@ class ReportController {
         ctx.body = body;
     }
 
+    async InboundDetailedPost(ctx) {
+        let body;
+        try {
+            let page = ctx.request.body.page;
+            let pagesize = ctx.request.body.pagesize;
+            let startTime_epoch = ctx.request.body.sTime_epoch;
+            let endTime_epoch = ctx.request.body.eTime_epoch;
+            let jdAgent = ctx.request.body.agentId;
+            let OrgId = ctx.request.body.orgId;
+            let CallUid = ctx.request.body.callId;
+            let gg1;
+            if (jdAgent != "" && jdAgent != undefined) {
+                gg1 = jdAgent.split(',');
+            }
+            let gg2;
+            if (OrgId != "" && OrgId != undefined) {
+                gg2 = OrgId.split(',');
+            }
+            let gg3;
+            if (CallUid != "" && CallUid != undefined) {
+                gg3 = CallUid.split(',');
+            }
+
+
+            let ani = ctx.request.body.callerNumber;
+            let dst = ctx.request.body.calleeNumber;
+            let answer_status = ctx.request.body.answerStatus;
+            let call_type = ctx.request.body.callType;
+
+            let keys = {
+                "jdAgent": gg1,
+                "OrgId": gg2,
+                "CallUid": gg3,
+                "callerNumber": ani,
+                "calleeNumber": dst,
+                "answerStatus": answer_status,
+                "callType": call_type,
+            }
+            let count;
+            let cs;
+            if (CallUid!=undefined && CallUid!=""){
+                cs = await selectTable('InboundDetailedForUUid', keys);
+                if (cs.length > 0) {
+                    count = [{"count": 1}];
+                } else {
+                    count = [{"count": 0}];
+                }
+            }else{
+                startTime_epoch = timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+                endTime_epoch = timestampToTime(endTime_epoch)
+                let start = (page - 1) * pagesize; //当前页
+                let end = pagesize * 1; //每页显示
+
+                count = await selectTableCount('InboundDetailedCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+
+                cs = await selectTable('InboundDetailed', keys, '', startTime_epoch, endTime_epoch, start, end);
+            }
+
+
+            body = {
+                'total': count["0"].count,
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+
     async CallInfo(ctx) {
         let body;
         try {

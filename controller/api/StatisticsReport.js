@@ -295,6 +295,52 @@ class StatisticsReport {
         ctx.body = body;
     }
 
+    async AgentCountStatisPost(ctx) {
+        let body;
+        try {
+            let page = ctx.request.body.page;
+            let pagesize = ctx.request.body.pagesize;
+            let startTime_epoch = ctx.request.body.sTime_epoch;
+            let endTime_epoch = ctx.request.body.eTime_epoch;
+            let SelectType = ctx.request.body.type;
+            let AgentId = ctx.request.body.agentId;
+            let OrgId = ctx.request.body.orgId;
+            let gg = "";
+            let orgStr="";
+            if (AgentId != "" && AgentId != undefined) {
+                gg = AgentId.split(',');
+            }
+            if (OrgId!= "" && OrgId != undefined){
+                orgStr = OrgId.split(',');
+            }
+            let keys = {"agentId": gg,"orgStr":orgStr}
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * pagesize; //当前页
+            let end = pagesize * 1; //每页显示
+
+            let count = await selectTableCount('AgentCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let cs = await selectTable('AgentCountStatis', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            body = {
+                'total': count["0"].count,
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
     /**
      * 坐席状态
      * @param ctx
@@ -347,6 +393,52 @@ class StatisticsReport {
         ctx.body = body;
     }
 
+    async AgentStatusStatisPost(ctx){
+        let body= {};
+        try {
+            let gg = "";
+            let orgStr="";
+
+            let page = ctx.request.body.page;
+            let pagesize = ctx.request.body.pagesize;
+            let startTime_epoch = ctx.request.body.sTime_epoch;
+            let endTime_epoch = ctx.request.body.eTime_epoch;
+            let AgentId = ctx.request.body.agentId;
+            let OrgId = ctx.request.body.orgId;
+            if (AgentId != "" && AgentId != undefined) {
+                gg = AgentId.split(',');
+            }
+            if (OrgId!= "" && OrgId != undefined){
+                orgStr = OrgId.split(',');
+            }
+            let keys = {"agentId": gg,"orgStr":orgStr}
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * pagesize; //当前页
+            let end = pagesize * 1; //每页显示
+
+            let count = await selectTableCount('AgentCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end);
+            let cs = await selectTable('AgentStatusStatis', keys, '', startTime_epoch, endTime_epoch, start, end);
+            body = {
+                'total': count["0"].count,
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+        }catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+
+    }
     /**
      * 技能组综合统计
      * @param ctx
@@ -362,6 +454,50 @@ class StatisticsReport {
             let endTime_epoch = ctx.request.query.eTime_epoch;
             let SelectType = ctx.request.query.type;
             let groupId = ctx.request.query.groupId;
+
+            let gg;
+            if (groupId != "" && groupId != undefined) {
+                gg = groupId.split(',');
+            }
+            let keys = {"org": gg}
+
+            startTime_epoch = ModHelper.timestampToTime(startTime_epoch) //时间戳转换成 yyyy-mm-dd hh:mm:ss
+            endTime_epoch = ModHelper.timestampToTime(endTime_epoch)
+
+
+            let start = (page - 1) * pagesize; //当前页
+            let end = pagesize * 1; //每页显示
+
+            let count = await selectTableCount('OrgCountStatisCount', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+            let cs = await selectTable('OrgCountStatis', keys, '', startTime_epoch, endTime_epoch, start, end, SelectType);
+
+            body = {
+                'total': count["0"].count,
+                'code': 0,
+                'message': '成功',
+                'page': page,
+                'pagesize': pagesize,
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
+    async OrgCountStatisPost(ctx) {
+        let body;
+        try {
+            let page = ctx.request.body.page;
+            let pagesize = ctx.request.body.pagesize;
+            let startTime_epoch = ctx.request.body.sTime_epoch;
+            let endTime_epoch = ctx.request.body.eTime_epoch;
+            let SelectType = ctx.request.body.type;
+            let groupId = ctx.request.body.groupId;
 
             let gg;
             if (groupId != "" && groupId != undefined) {
