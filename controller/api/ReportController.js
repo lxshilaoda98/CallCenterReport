@@ -329,13 +329,14 @@ class ReportController {
     async InboundDetailedPost(ctx) {
         let body;
         try {
-            let page = ctx.request.body.page;
-            let pagesize = ctx.request.body.pagesize;
-            let startTime_epoch = ctx.request.body.sTime_epoch;
-            let endTime_epoch = ctx.request.body.eTime_epoch;
-            let jdAgent = ctx.request.body.agentId;
-            let OrgId = ctx.request.body.orgId;
-            let CallUid = ctx.request.body.callId;
+            let bodyJson = ctx.request.body;
+            let page = bodyJson.page;
+            let pagesize =  bodyJson.pagesize;
+            let startTime_epoch =  bodyJson.sTime_epoch;
+            let endTime_epoch =  bodyJson.eTime_epoch;
+            let jdAgent =  bodyJson.agentId;
+            let OrgId =  bodyJson.orgId;
+            let CallUid =  bodyJson.callId;
             let gg1;
             if (jdAgent != "" && jdAgent != undefined) {
                 gg1 = jdAgent.split(',');
@@ -350,10 +351,10 @@ class ReportController {
             }
 
 
-            let ani = ctx.request.body.callerNumber;
-            let dst = ctx.request.body.calleeNumber;
-            let answer_status = ctx.request.body.answerStatus;
-            let call_type = ctx.request.body.callType;
+            let ani =  bodyJson.callerNumber;
+            let dst =  bodyJson.calleeNumber;
+            let answer_status =  bodyJson.answerStatus;
+            let call_type =  bodyJson.callType;
 
             let keys = {
                 "jdAgent": gg1,
@@ -364,6 +365,7 @@ class ReportController {
                 "answerStatus": answer_status,
                 "callType": call_type,
             }
+            console.log(keys);
             let count;
             let cs;
             if (CallUid!=undefined && CallUid!=""){

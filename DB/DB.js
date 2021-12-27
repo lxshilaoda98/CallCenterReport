@@ -224,8 +224,10 @@ let InboundDetailed = async function (startTime_epoch, endTime_epoch, start, end
         in_sql = in_sql.replace("#calleeNumber", "");
     }
 
+
     //呼出
     let table = await query(out_sql, params)
+
 
     //呼入
     let inTable = await query(in_sql, params)
