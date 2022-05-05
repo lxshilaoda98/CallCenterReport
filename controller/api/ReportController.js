@@ -426,6 +426,27 @@ class ReportController {
         ctx.body = body;
     }
 
+    //无用，测试
+    async sssss(ctx) {
+        let body;
+        try {
+            let CallUid =ctx.request.query.callid;
+            let cs = await selectTable('CallInfo',CallUid);
+            body = {
+                'code': 0,
+                'message': '成功',
+                'data': cs
+            }
+
+        } catch (e) {
+            body = {
+                'code': 1,
+                'message': e.message,
+            }
+        }
+        ctx.body = body;
+    }
+
     /**
      * 外呼明细
      * @param ctx
