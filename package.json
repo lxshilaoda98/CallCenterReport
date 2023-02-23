@@ -28,7 +28,7 @@
     "mysql": "^2.17.1",
     "mysql2": "^2.1.0",
     "nodejs-websocket": "^1.7.2",
-    "sequelize": "^5.21.6",
+    "sequelize": "^6.28.2",
     "silly-datetime": "^0.1.2",
     "socket.io": "^2.2.0",
     "string-format": "^2.0.0",
